@@ -3,7 +3,7 @@ package splat.parser.elements;
 import splat.lexer.Token;
 
 public class Assignment extends Statement {
-    private Token variable;   // должен быть Token
+    private Token variable;
     private Expression expr;
 
     public Assignment(Token variable, Expression expr) {
@@ -12,7 +12,6 @@ public class Assignment extends Statement {
         this.expr = expr;
     }
 
-    public Token getVariable() { return variable; }
     public Expression getExpression() { return expr; }
 
     @Override

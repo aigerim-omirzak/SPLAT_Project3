@@ -14,7 +14,6 @@ public class Literal extends Expression {
         return value;
     }
 
-    // If you need to get the actual value without quotes for strings
     public String getStringValue() {
         if (value.startsWith("\"") && value.endsWith("\"")) {
             return value.substring(1, value.length() - 1);

@@ -10,9 +10,6 @@ public class PrintStmt extends Statement {
         this.expr = expr;
     }
 
-    public Expression getExpr() {
-        return expr;
-    }
 
     public Token getStartToken() {
         return super.getStartToken();

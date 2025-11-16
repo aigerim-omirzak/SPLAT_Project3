@@ -9,14 +9,6 @@ public abstract class Statement extends ASTElement {
     }
 
     /**
-     * Возвращает токен, с которого начинается statement.
-     * Все подклассы могут переопределять этот метод.
-     */
-    public Token getStartToken() {
-        return super.getToken();
-    }
-
-    /**
      * This will be needed for Phase 3 - this abstract method will need to be
      * implemented by every Statement subclass.  This method essentially does
      * semantic analysis on the statement, and all sub-expressions that might

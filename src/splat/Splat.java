@@ -28,8 +28,8 @@ public class Splat {
 		 ProgramAST progAST = parser.parse();
 		
 		// Step 3.  Semantic Analysis
-		// SemanticAnalyzer analyzer = new SemanticAnalyzer(progAST);
-		// analyzer.analyze();
+		 SemanticAnalyzer analyzer = new SemanticAnalyzer(progAST);
+		 analyzer.analyze();
 		
 		// Step 4.  Executor
 		// Executor executor = new Executor(progAST);
