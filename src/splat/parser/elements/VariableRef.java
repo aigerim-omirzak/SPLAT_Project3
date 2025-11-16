@@ -1,6 +1,10 @@
 package splat.parser.elements;
 
+import java.util.Map;
+
 import splat.lexer.Token;
+import splat.semanticanalyzer.SemanticAnalysisException;
+import splat.semanticanalyzer.Type;
 
 public class VariableRef extends Expression {
     private final Token name;
@@ -15,5 +19,18 @@ public class VariableRef extends Expression {
     @Override
     public String toString() {
         return name.getLexeme();
+    }
+
+    @Override
+    public Type analyzeAndGetType(Map<String, FunctionDecl> funcMap,
+                                  Map<String, Type> varAndParamMap) throws SemanticAnalysisException {
+        String lexeme = name.getLexeme();
+        Type type = varAndParamMap.get(lexeme);
+        if (type == null) {
+            throw new SemanticAnalysisException(
+                    "Variable '" + lexeme + "' is not defined",
+                    name.getLine(), name.getCol());
+        }
+        return type;
     }
 }

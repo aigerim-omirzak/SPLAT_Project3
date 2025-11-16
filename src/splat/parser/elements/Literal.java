@@ -1,6 +1,10 @@
 package splat.parser.elements;
 
+import java.util.Map;
+
 import splat.lexer.Token;
+import splat.semanticanalyzer.SemanticAnalysisException;
+import splat.semanticanalyzer.Type;
 
 public class Literal extends Expression {
     private String value;
@@ -32,5 +36,23 @@ public class Literal extends Expression {
 
     public boolean isBooleanLiteral() {
         return value.equals("true") || value.equals("false");
+    }
+
+    @Override
+    public Type analyzeAndGetType(Map<String, FunctionDecl> funcMap,
+                                  Map<String, Type> varAndParamMap) throws SemanticAnalysisException {
+        if (isIntegerLiteral()) {
+            return Type.INTEGER;
+        }
+        if (isBooleanLiteral()) {
+            return Type.BOOLEAN;
+        }
+        if (isStringLiteral()) {
+            return Type.STRING;
+        }
+
+        throw new SemanticAnalysisException(
+                "Unknown literal '" + value + "'",
+                getLine(), getColumn());
     }
 }

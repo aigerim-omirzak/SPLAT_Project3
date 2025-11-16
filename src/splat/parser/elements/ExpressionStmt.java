@@ -1,5 +1,10 @@
 package splat.parser.elements;
 
+import java.util.Map;
+
+import splat.semanticanalyzer.SemanticAnalysisException;
+import splat.semanticanalyzer.Type;
+
 public class ExpressionStmt extends Statement {
     private Expression expr;
 
@@ -10,5 +15,16 @@ public class ExpressionStmt extends Statement {
 
     public Expression getExpression() {
         return expr;
+    }
+
+    @Override
+    public void analyze(Map<String, FunctionDecl> funcMap,
+                        Map<String, Type> varAndParamMap) throws SemanticAnalysisException {
+        Type type = expr.analyzeAndGetType(funcMap, varAndParamMap);
+        if (type == Type.VOID) {
+            throw new SemanticAnalysisException(
+                    "Expression statement cannot be void",
+                    expr.getLine(), expr.getColumn());
+        }
     }
 }

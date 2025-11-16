@@ -1,350 +1,122 @@
 package splat.parser;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.HashSet;
 
 import splat.lexer.Token;
 import splat.parser.elements.*;
 
 public class Parser {
 
-    private List<Token> tokens;
-    private boolean hasErrors = false;
+    private final List<Token> tokens;
+    private int position;
+
+    private static final Set<String> KEYWORDS = new HashSet<>(Arrays.asList(
+            "program", "begin", "end", "if", "then", "else",
+            "while", "loop", "do", "return", "is",
+            "print", "print_line", "and", "or", "not",
+            "true", "false", "for"
+    ));
 
     public Parser(List<Token> tokens) {
         this.tokens = tokens;
+        this.position = 0;
     }
 
-    private void debug(String msg) {
-        System.err.println("[DEBUG] " + msg);
-    }
-
-    /*-----------------------------------------
-     * Utility methods
-     *----------------------------------------*/
-
-    private Token nextToken() throws ParseException {
-        if (tokens.isEmpty())
-            throw new ParseException("Unexpected end of input.", null);
-        return tokens.remove(0);
-    }
-
-    private Token expect(String expected) throws ParseException {
-        if (tokens.isEmpty())
-            throw new ParseException("Unexpected end of input, expected '" + expected + "'", null);
-        Token t = tokens.get(0);
-        if (!t.getLexeme().equals(expected)) {
-            throw new ParseException("Expected '" + expected + "', got '" + t.getLexeme() + "'.", t);
-        }
-        return tokens.remove(0);
-    }
-
-    private boolean peek(String expected) {
-        return !tokens.isEmpty() && tokens.get(0).getLexeme().equals(expected);
-    }
-
-    private boolean match(String expected) throws ParseException {
-        if (peek(expected)) {
-            nextToken();
-            return true;
-        }
-        return false;
-    }
-
-    private void skipStrayTokens() {
-        while (!tokens.isEmpty() && (peek(";") || peek(":"))) {
-            tokens.remove(0);
-        }
-    }
-
-    private static final Set<String> KEYWORDS = new HashSet<>();
-    static {
-        String[] keys = { "if", "then", "else", "while", "loop", "do",
-                "begin", "end", "program", "return", "is",
-                "print", "print_line", "not" };
-        for (String k : keys) KEYWORDS.add(k);
-    }
-
-    private Token checkIdentifier() throws ParseException {
-        if (tokens.isEmpty())
-            throw new ParseException("Unexpected end of input, expected identifier.", null);
-        Token tok = tokens.get(0);
-        if (!isIdentifier(tok.getLexeme())) {
-            throw new ParseException("Expected identifier, got '" + tok.getLexeme() + "'", tok);
-        }
-        return tokens.remove(0);
-    }
-
-    private boolean isIdentifier(String val) {
-        return val != null && !val.isEmpty() && !KEYWORDS.contains(val) && val.matches("[A-Za-z_][A-Za-z0-9_]*");
-    }
-
-    private void skipUntil(String... stopTokens) {
-        while (!tokens.isEmpty()) {
-            String current = tokens.get(0).getLexeme();
-            for (String stop : stopTokens) {
-                if (current.equals(stop)) {
-                    return;
-                }
-            }
-            tokens.remove(0);
-        }
-    }
-
-    /*-----------------------------------------
-     * Program
-     *----------------------------------------*/
     public ProgramAST parse() throws ParseException {
-        if (!tokens.isEmpty()) {
-            String firstLexeme = tokens.get(0).getLexeme();
-            // Логируем первые 10 токенов для диагностики
-            System.err.println("DEBUG PARSER START - First 10 tokens: " +
-                    tokens.subList(0, Math.min(10, tokens.size())));
-        }
-
-        try {
-            expect("program");
-
-            // Program name
-            Token progName;
-            if (!tokens.isEmpty() && isIdentifier(tokens.get(0).getLexeme())) {
-                progName = checkIdentifier();
-            } else {
-                progName = new Token("main", tokens.isEmpty() ? 0 : tokens.get(0).getLine(),
-                        tokens.isEmpty() ? 0 : tokens.get(0).getCol());
-            }
-
-            skipStrayTokens();
-
-            List<Declaration> decls = parseDecls();
-            expect("begin");
-            List<Statement> stmts = parseStmts();
-            expect("end");
-
-            if (peek(";")) {
-                try {
-                    nextToken();
-                } catch (ParseException e) {
-                    // ignore
-                }
-            }
-
-            return new ProgramAST(decls, stmts, progName);
-        } catch (ParseException e) {
-            hasErrors = true;
-            throw e;
-        }
+        Token programToken = expect("program");
+        List<Declaration> declarations = parseDeclarations();
+        expect("begin");
+        List<Statement> statements = parseStatementList("end");
+        expect("end");
+        match(";");
+        ensureEOF();
+        return new ProgramAST(declarations, statements, programToken);
     }
 
-    /*-----------------------------------------
-     * Declarations
-     *----------------------------------------*/
-    private List<Declaration> parseDecls() {
+    /* ----------------------------------------------------
+     * Declaration parsing
+     * ---------------------------------------------------- */
+    private List<Declaration> parseDeclarations() throws ParseException {
         List<Declaration> decls = new ArrayList<>();
-        Set<String> declaredNames = new HashSet<>();
-
-        while (!tokens.isEmpty() && !peek("begin")) {
-            skipStrayTokens();
-            if (tokens.isEmpty() || peek("begin")) break;
-
-            if (isIdentifier(tokens.get(0).getLexeme())) {
-                try {
-                    String potentialName = tokens.get(0).getLexeme();
-                    if (declaredNames.contains(potentialName)) {
-                        throw new ParseException("Duplicate declaration: '" + potentialName + "'", tokens.get(0));
-                    }
-
-                    Declaration decl = parseDecl();
-                    if (decl != null) {
-                        decls.add(decl);
-                        declaredNames.add(potentialName);
-                    }
-                } catch (ParseException e) {
-                    skipUntil("begin", "end", ";");
-                }
-            } else {
-                if (!peek("begin")) {
-                    tokens.remove(0);
-                }
-            }
+        while (!isAtEnd() && isIdentifier(peek())) {
+            decls.add(parseDeclaration());
         }
-
         return decls;
     }
 
-    private Declaration parseDecl() throws ParseException {
-        System.err.println("DEBUG parseDecl: tokens = " + tokens.subList(0, Math.min(5, tokens.size())));
-
-        Token nameTok = checkIdentifier();
-        System.err.println("DEBUG: nameTok = " + nameTok.getLexeme());
-
-        if (tokens.isEmpty()) {
-            throw new ParseException("Unexpected end of input after identifier", nameTok);
+    private Declaration parseDeclaration() throws ParseException {
+        Token name = consumeIdentifier("identifier at start of declaration");
+        if (check(":")) {
+            return parseVariableDecl(name);
+        } else if (check("(")) {
+            return parseFunctionDecl(name);
         }
-
-        Token next = tokens.get(0);
-        System.err.println("DEBUG: next token = " + next.getLexeme());
-
-        if (next.getLexeme().equals(":")) {
-            System.err.println("DEBUG: parsing variable declaration");
-            return parseVariableDecl();
-        } else if (next.getLexeme().equals("is")) {
-            System.err.println("DEBUG: parsing function without params");
-            return parseFunctionDeclNoParams(nameTok);
-        } else if (next.getLexeme().equals("(")) {
-            System.err.println("DEBUG: parsing function with params");
-            return parseFunctionDecl(nameTok);
-        } else {
-            System.err.println("DEBUG: throwing parse exception");
-            throw new ParseException("Expected ':' or 'is' after identifier, got '" + next.getLexeme() + "'", next);
-        }
+        Token next = peek();
+        throw new ParseException("Unexpected token after identifier '" + name.getLexeme() + "'", next != null ? next : name);
     }
 
-
-    private VariableDecl parseVariableDecl() throws ParseException {
-        Token nameTok = checkIdentifier();
+    private VariableDecl parseVariableDecl(Token nameToken) throws ParseException {
         expect(":");
-        Token typeTok = checkIdentifier();
-
-        if (peek(";")) {
-            nextToken();
-        }
-
-        return new VariableDecl(nameTok, typeTok);
+        Token typeToken = consumeIdentifier("type name");
+        expect(";");
+        return new VariableDecl(nameToken, typeToken);
     }
 
-
-
-
-    private FunctionDecl parseFunctionDecl(Token nameTok) throws ParseException {
-        expect("(");
-        List<VariableDecl> params = parseParamList();
-
-        Token returnType = null;
-        if (peek(":")) {
-            nextToken();
-            returnType = checkIdentifier();
-        }
-
-        expect("is");
-        expect("begin");
-
-        List<VariableDecl> localVars = new ArrayList<>();
-
-        // НА Phase 2 НЕ ПРОВЕРЯЕМ ДУБЛИРОВАНИЕ С ПАРАМЕТРАМИ - это для Phase 3
-        while (!tokens.isEmpty() && isIdentifier(tokens.get(0).getLexeme()) &&
-                tokens.size() > 1 && tokens.get(1).getLexeme().equals(":")) {
-            localVars.add(parseVariableDecl());
-        }
-
-        List<Statement> bodyStmts = parseStmts();
-
-        // НА Phase 2 НЕ ПРОВЕРЯЕМ НАЛИЧИЕ RETURN - это для Phase 3
-        expect("end");
-
-        if (!tokens.isEmpty() && tokens.get(0).getLexeme().equals(nameTok.getLexeme())) {
-            nextToken();
-        }
-
-        if (peek(";")) nextToken();
-
-        return new FunctionDecl(nameTok, params, returnType, localVars, bodyStmts);
-    }
-
-
-    private FunctionDecl parseFunctionDeclNoParams(Token nameTok) throws ParseException {
-        expect("is");
-        expect("begin");
-
-        List<VariableDecl> localVars = new ArrayList<>();
-        while (!tokens.isEmpty() && isIdentifier(tokens.get(0).getLexeme()) &&
-                tokens.size() > 1 && tokens.get(1).getLexeme().equals(":")) {
-            localVars.add(parseVariableDecl());
-        }
-
-        List<Statement> bodyStmts = parseStmts();
-        expect("end");
-
-        // Опциональное имя функции после end
-        if (!tokens.isEmpty() && tokens.get(0).getLexeme().equals(nameTok.getLexeme())) {
-            nextToken();
-        }
-
-        if (peek(";")) nextToken();
-
-        return new FunctionDecl(nameTok, new ArrayList<>(), null, localVars, bodyStmts);
-    }
-
-    private List<VariableDecl> parseParamList() throws ParseException {
+    private FunctionDecl parseFunctionDecl(Token nameToken) throws ParseException {
         List<VariableDecl> params = new ArrayList<>();
         expect("(");
-
-        if (!peek(")")) {
+        if (!check(")")) {
             do {
-                Token paramName = checkIdentifier();
+                Token paramName = consumeIdentifier("parameter name");
                 expect(":");
-                Token paramType = checkIdentifier();
+                Token paramType = consumeIdentifier("parameter type");
                 params.add(new VariableDecl(paramName, paramType));
             } while (match(","));
         }
-
         expect(")");
-        return params;
-    }
+        expect(":");
+        Token returnType = consumeIdentifier("return type");
+        expect("is");
 
-    /*-----------------------------------------
-     * Statements - IMPROVED VERSION
-     *----------------------------------------*/
-    private List<Statement> parseStmts() throws ParseException {
-        List<Statement> stmts = new ArrayList<>();
-
-        while (!tokens.isEmpty()) {
-            String current = tokens.get(0).getLexeme();
-
-            if (current.equals("end") || current.equals("else")) {
-                break;
-            }
-
-            if (current.equals(";")) {
-                tokens.remove(0);
-                continue;
-            }
-
-            // Проверка на объявления переменных в statements section
-            if (isIdentifier(current) && tokens.size() > 1 && tokens.get(1).getLexeme().equals(":")) {
-                throw new ParseException("Variable declarations are not allowed in statements section", tokens.get(0));
-            }
-
-            // Проверка на другие недопустимые конструкции
-            if (current.equals(":")) {
-                throw new ParseException("Unexpected ':' in statements section", tokens.get(0));
-            }
-
-            // Проверка на недопустимые ключевые слова в statements
-            if (current.equals("program") || current.equals("is")) {
-                throw new ParseException("Unexpected keyword in statements section: " + current, tokens.get(0));
-            }
-
-            Statement stmt = parseStmt();
-            stmts.add(stmt);
+        List<VariableDecl> locals = new ArrayList<>();
+        while (isIdentifier(peek()) && ":".equals(lookAheadLexeme(1))) {
+            Token localName = consumeIdentifier("local variable name");
+            locals.add(parseVariableDecl(localName));
         }
 
-        return stmts;
+        expect("begin");
+        List<Statement> body = parseStatementList("end");
+        expect("end");
+        if (check(nameToken.getLexeme())) {
+            advance();
+        }
+        expect(";");
+        return new FunctionDecl(nameToken, params, returnType, locals, body);
     }
 
-    // ======================
-// parseStmt() для Phase 2
-// ======================
-    private Statement parseStmt() throws ParseException {
-        if (tokens.isEmpty()) {
-            throw new ParseException("Unexpected end of input in statement", null);
+    /* ----------------------------------------------------
+     * Statement parsing
+     * ---------------------------------------------------- */
+    private List<Statement> parseStatementList(String... terminators) throws ParseException {
+        Set<String> stops = new HashSet<>(Arrays.asList(terminators));
+        List<Statement> statements = new ArrayList<>();
+        while (!isAtEnd() && (terminators.length == 0 || !stops.contains(peek().getLexeme()))) {
+            statements.add(parseStatement());
         }
+        return statements;
+    }
 
-        String first = tokens.get(0).getLexeme();
-
-        switch (first) {
+    private Statement parseStatement() throws ParseException {
+        Token token = peek();
+        if (token == null) {
+            throw new ParseException("Unexpected end of input in statement", lastToken());
+        }
+        String lexeme = token.getLexeme();
+        switch (lexeme) {
             case "if":
                 return parseIf();
             case "while":
@@ -357,1035 +129,367 @@ public class Parser {
             case "begin":
                 return parseBlock();
             default:
-                if (isIdentifier(first)) {
-                    if (tokens.size() > 1 && tokens.get(1).getLexeme().equals(":=")) {
-                        return parseAssign();
-                    } else if (tokens.size() > 1 && tokens.get(1).getLexeme().equals("(")) {
-                        Token funcName = checkIdentifier();
-                        FunctionCall funcCall = parseFunctionCallExpr(funcName);
-                        expect(";");
-                        return new FunctionCallStmt(funcCall);
-                    } else {
-                        throw new ParseException("Unexpected identifier in statement: " + first, tokens.get(0));
-                    }
+                if (isIdentifier(token) && ":=".equals(lookAheadLexeme(1))) {
+                    return parseAssignment();
+                } else if (isIdentifier(token) && "(".equals(lookAheadLexeme(1))) {
+                    FunctionCall call = parseFunctionCall();
+                    expect(";");
+                    return new FunctionCallStmt(call);
                 }
-
-                // Любые другие неожиданные токены
-                throw new ParseException("Unexpected token in statement: " + first, tokens.get(0));
         }
+        throw new ParseException("Unexpected token in statement: " + lexeme, token);
     }
 
-
-    private Assignment parseAssign() throws ParseException {
-        // СТРОГАЯ ПРОВЕРКА ТОЛЬКО СИНТАКСИСА: слева от := может быть только идентификатор
-        if (!isIdentifier(tokens.get(0).getLexeme())) {
-            throw new ParseException("Expected variable name before ':='", tokens.get(0));
-        }
-
-        Token varName = checkIdentifier();
+    private Assignment parseAssignment() throws ParseException {
+        Token name = consumeIdentifier("variable name");
         expect(":=");
-
-        // Check for arithmetic expressions without parentheses
-        if (!peek("(") && isArithmeticExpressionAhead()) {
-            throw new ParseException("Arithmetic expressions must be enclosed in parentheses", tokens.get(0));
-        }
-
-        Expression expr = parseExpr();
-
-        if (peek(";")) {
-            nextToken();
-        }
-
-        return new Assignment(varName, expr);
-    }
-
-    private boolean isArithmeticExpressionAhead() {
-        List<Token> tempTokens = new ArrayList<>(tokens);
-        int parenCount = 0;
-
-        for (int i = 0; i < Math.min(10, tempTokens.size()); i++) {
-            Token tok = tempTokens.get(i);
-            String lexeme = tok.getLexeme();
-
-            if (lexeme.equals("(")) {
-                parenCount++;
-            } else if (lexeme.equals(")")) {
-                parenCount--;
-            } else if (parenCount == 0 &&
-                    (lexeme.equals("+") || lexeme.equals("-") ||
-                            lexeme.equals("*") || lexeme.equals("/") || lexeme.equals("%"))) {
-                return true;
-            } else if (lexeme.equals(";") || lexeme.equals("end") ||
-                    lexeme.equals("else")) {
-                break;
-            }
-
-            if (parenCount < 0) break;
-        }
-
-        return false;
+        ensureParenthesizedArithmeticInAssignment();
+        Expression expr = parseExpression();
+        expect(";");
+        return new Assignment(name, expr);
     }
 
     private IfThenElse parseIf() throws ParseException {
         Token ifToken = expect("if");
-
-        // Проверка, что условие не пустое
-        if (tokens.isEmpty() || peek("then") || peek(";") || peek("end")) {
-            throw new ParseException("Expected condition after 'if'", ifToken);
-        }
-
-        Expression condition = parseExpr();
-
-        // СТРОГАЯ проверка для 'then'
-        if (tokens.isEmpty()) {
-            throw new ParseException("Expected 'then' after if condition", ifToken);
-        }
-
-        Token nextToken = tokens.get(0);
-        if (!nextToken.getLexeme().equals("then")) {
-            throw new ParseException("Expected 'then' after if condition, got '" + nextToken.getLexeme() + "'", nextToken);
-        }
-
+        Expression condition = parseExpression();
         expect("then");
-
-        List<Statement> thenStmts = parseStmts();
-        List<Statement> elseStmts = new ArrayList<>();
-
-        if (peek("else")) {
-            expect("else");
-            elseStmts = parseStmts();
+        List<Statement> thenPart = parseStatementList("else", "end");
+        List<Statement> elsePart = new ArrayList<>();
+        if (match("else")) {
+            elsePart = parseStatementList("end");
         }
-
         expect("end");
-
-        if (peek("if")) {
-            nextToken();
-        }
-
-        if (peek(";")) {
-            nextToken();
-        }
-
-        return new IfThenElse(ifToken, condition, thenStmts, elseStmts);
+        expect("if");
+        expect(";");
+        return new IfThenElse(ifToken, condition, thenPart, elsePart);
     }
 
     private WhileLoop parseWhile() throws ParseException {
         Token whileToken = expect("while");
-        Expression condition = parseExpr();
-
-        // Allow both 'do' and 'loop' in while loops
-        if (peek("do") || peek("loop")) {
-            nextToken(); // consume "do" or "loop"
-        } else {
-            throw new ParseException("Expected 'do' or 'loop' after while condition", tokens.get(0));
+        Expression condition = parseExpression();
+        if (!(match("do") || match("loop"))) {
+            Token err = peek();
+            throw new ParseException("Expected 'do' or 'loop' after while condition", err != null ? err : whileToken);
         }
-
-        List<Statement> bodyStmts = parseStmts();
+        List<Statement> body = parseStatementList("end");
         expect("end");
-
-        if (peek("while") || peek("loop")) {
-            nextToken();
+        if (!(match("while") || match("loop"))) {
+            Token err = peek();
+            throw new ParseException("Expected 'while' or 'loop' after 'end'", err != null ? err : whileToken);
         }
-
-        if (peek(";")) {
-            nextToken();
-        }
-
-        return new WhileLoop(whileToken, condition, bodyStmts);
+        expect(";");
+        return new WhileLoop(whileToken, condition, body);
     }
-
 
     private PrintStmt parsePrint() throws ParseException {
-        Token printToken = nextToken();
+        Token printToken = advance();
         Expression expr = null;
-
         boolean isPrintLine = printToken.getLexeme().equals("print_line");
-
-        // Parse expression if present (optional for print_line)
-        if (!tokens.isEmpty() && !peek(";") && !peek("end") && !peek("else")) {
-            expr = parseExpr();
-        } else if (!isPrintLine) {
-            // print requires an argument
-            throw new ParseException("print requires an argument", printToken);
+        if (isPrintLine) {
+            if (startsExpression()) {
+                Token err = peek();
+                throw new ParseException("print_line does not take an argument", err != null ? err : printToken);
+            }
+        } else {
+            if (!startsExpression()) {
+                Token err = peek();
+                throw new ParseException("print requires an expression", err != null ? err : printToken);
+            }
+            if (isParenthesizedStringLiteral()) {
+                Token err = tokens.get(position + 1);
+                throw new ParseException("print string literals must not be parenthesized", err);
+            }
+            expr = parseExpression();
         }
-
-        if (peek(";")) {
-            nextToken();
-        }
-
+        expect(";");
         return new PrintStmt(printToken, expr);
     }
-
 
     private ReturnStmt parseReturn() throws ParseException {
         Token returnToken = expect("return");
         Expression expr = null;
-
-        if (!peek(";")) {
-            expr = parseExpr();
+        if (startsExpression()) {
+            expr = parseExpression();
         }
-
-        if (peek(";")) {
-            try {
-                nextToken();
-            } catch (ParseException e) {
-                // ignore
-            }
-        }
-
+        expect(";");
         return new ReturnStmt(returnToken, expr);
     }
 
     private Block parseBlock() throws ParseException {
         Token beginToken = expect("begin");
-        List<Statement> stmts = parseStmts();
+        List<Statement> stmts = parseStatementList("end");
         expect("end");
-
-        if (peek(";")) {
-            try {
-                nextToken();
-            } catch (ParseException e) {
-                // ignore
-            }
-        }
-
+        expect(";");
         return new Block(beginToken, stmts);
     }
 
-    /*-----------------------------------------
-     * Expressions
-     *----------------------------------------*/
-    private Expression parseExpr() throws ParseException {
-        if (tokens.isEmpty()) {
-            throw new ParseException("Unexpected end of input in expression", null);
-        }
-
-        // Проверка, что выражение не начинается с недопустимого токена
-        String first = tokens.get(0).getLexeme();
-        if (first.equals(";") || first.equals("end") || first.equals("else") ||
-                first.equals("then") || first.equals("do") || first.equals("loop")) {
-            throw new ParseException("Expected expression, got '" + first + "'", tokens.get(0));
-        }
-
-        return parseOrExpr();
+    private FunctionCall parseFunctionCall() throws ParseException {
+        Token name = consumeIdentifier("function name");
+        return finishFunctionCall(name);
     }
 
-    private Expression parseOrExpr() throws ParseException {
-        Expression left = parseAndExpr();
-
-        while (peek("or")) {
-            Token op = nextToken();
-            Expression right = parseAndExpr();
-            left = new BinaryOp(left, op, right);
+    private FunctionCall finishFunctionCall(Token name) throws ParseException {
+        expect("(");
+        List<Expression> args = new ArrayList<>();
+        if (!check(")")) {
+            do {
+                args.add(parseExpression());
+            } while (match(","));
         }
-
-        return left;
+        expect(")");
+        return new FunctionCall(name, args);
     }
 
-    private Expression parseAndExpr() throws ParseException {
-        Expression left = parseComparison();
+    /* ----------------------------------------------------
+     * Expression parsing
+     * ---------------------------------------------------- */
+    private Expression parseExpression() throws ParseException {
+        return parseOr();
+    }
 
-        while (peek("and")) {
-            Token op = nextToken();
+    private Expression parseOr() throws ParseException {
+        Expression expr = parseAnd();
+        while (match("or")) {
+            Token op = previous();
+            Expression right = parseAnd();
+            expr = new BinaryOp(expr, op, right);
+        }
+        return expr;
+    }
+
+    private Expression parseAnd() throws ParseException {
+        Expression expr = parseComparison();
+        while (match("and")) {
+            Token op = previous();
             Expression right = parseComparison();
-            left = new BinaryOp(left, op, right);
+            expr = new BinaryOp(expr, op, right);
         }
-
-        return left;
+        return expr;
     }
 
     private Expression parseComparison() throws ParseException {
-        Expression left = parseAddSub();
-
-        while (peek("<") || peek("<=") || peek(">") || peek(">=") || peek("==") || peek("!=")) {
-            Token op = nextToken();
+        Expression expr = parseAddSub();
+        while (check("<") || check("<=") || check(">") || check(">=") || check("==") || check("!=")) {
+            Token op = advance();
             Expression right = parseAddSub();
-            left = new BinaryOp(left, op, right);
+            expr = new BinaryOp(expr, op, right);
         }
-
-        return left;
+        return expr;
     }
 
     private Expression parseAddSub() throws ParseException {
-        Expression left = parseMulDiv();
-
-        while (peek("+") || peek("-")) {
-            Token op = nextToken();
+        Expression expr = parseMulDiv();
+        while (check("+") || check("-")) {
+            Token op = advance();
             Expression right = parseMulDiv();
-            left = new BinaryOp(left, op, right);
+            expr = new BinaryOp(expr, op, right);
         }
-
-        return left;
+        return expr;
     }
 
     private Expression parseMulDiv() throws ParseException {
-        Expression left = parseFactor();
-
-        while (peek("*") || peek("/") || peek("%")) {
-            Token op = nextToken();
-            Expression right = parseFactor();
-            left = new BinaryOp(left, op, right);
+        Expression expr = parseUnary();
+        while (check("*") || check("/") || check("%")) {
+            Token op = advance();
+            Expression right = parseUnary();
+            expr = new BinaryOp(expr, op, right);
         }
-
-        return left;
+        return expr;
     }
 
-    // ======================
-// parseFactor() для Phase 2
-// ======================
-    private Expression parseFactor() throws ParseException {
-        if (tokens.isEmpty()) {
-            throw new ParseException("Unexpected end of input in factor", null);
+    private Expression parseUnary() throws ParseException {
+        if (match("not") || match("-")) {
+            Token op = previous();
+            Expression right = parseUnary();
+            return new UnaryOp(op, right);
         }
+        return parsePrimary();
+    }
 
-        Token token = tokens.get(0);
+    private Expression parsePrimary() throws ParseException {
+        Token token = peek();
+        if (token == null) {
+            throw new ParseException("Unexpected end of input in expression", lastToken());
+        }
         String lexeme = token.getLexeme();
-
-        if (lexeme.equals("-") || lexeme.equals("not")) {
-            Token op = nextToken();
-            Expression expr = parseFactor();
-            return new UnaryOp(op, expr);
-        }
-
-        if (lexeme.equals("(")) {
-            nextToken();
-            Expression expr = parseExpr();
+        if (match("(")) {
+            Expression expr = parseExpression();
             expect(")");
             return expr;
         }
-
-        if (lexeme.matches("\\d+") || (lexeme.startsWith("\"") && lexeme.endsWith("\"")) ||
-                lexeme.equals("true") || lexeme.equals("false")) {
-            nextToken();
+        if (isLiteralToken(token)) {
+            advance();
             return new Literal(token);
         }
-
-        if (isIdentifier(lexeme)) {
-            nextToken();
-
-            if (peek("(")) {
-                return parseFunctionCallExpr(token);
+        if (isIdentifier(token)) {
+            Token identifier = advance();
+            if (check("(")) {
+                return finishFunctionCall(identifier);
             }
-
-            return new VariableRef(token);
+            return new VariableRef(identifier);
         }
-
-        throw new ParseException("Unexpected token in factor: " + lexeme, token);
+        throw new ParseException("Unexpected token in expression: " + lexeme, token);
     }
 
+    private boolean isLiteralToken(Token token) {
+        if (token == null) {
+            return false;
+        }
+        String lexeme = token.getLexeme();
+        return lexeme.matches("\\d+") ||
+                (lexeme.startsWith("\"") && lexeme.endsWith("\"")) ||
+                (lexeme.startsWith("'") && lexeme.endsWith("'")) ||
+                lexeme.equals("true") || lexeme.equals("false");
+    }
+
+    /* ----------------------------------------------------
+     * Utility helpers
+     * ---------------------------------------------------- */
+    private boolean isIdentifier(Token token) {
+        if (token == null) {
+            return false;
+        }
+        String lexeme = token.getLexeme();
+        if (lexeme.isEmpty() || KEYWORDS.contains(lexeme)) {
+            return false;
+        }
+        return lexeme.matches("[A-Za-z_][A-Za-z0-9_]*");
+    }
+
+    private Token consumeIdentifier(String context) throws ParseException {
+        Token token = peek();
+        if (!isIdentifier(token)) {
+            throw new ParseException("Expected " + context + ", found '" + (token != null ? token.getLexeme() : "<eof>") + "'", token != null ? token : lastToken());
+        }
+        position++;
+        return token;
+    }
+
+    private boolean isAtEnd() {
+        return position >= tokens.size();
+    }
+
+    private Token peek() {
+        if (isAtEnd()) {
+            return null;
+        }
+        return tokens.get(position);
+    }
+
+    private Token advance() throws ParseException {
+        if (isAtEnd()) {
+            throw new ParseException("Unexpected end of input", lastToken());
+        }
+        return tokens.get(position++);
+    }
+
+    private boolean match(String lexeme) {
+        if (check(lexeme)) {
+            position++;
+            return true;
+        }
+        return false;
+    }
+
+    private boolean check(String lexeme) {
+        Token token = peek();
+        return token != null && token.getLexeme().equals(lexeme);
+    }
+
+    private Token expect(String lexeme) throws ParseException {
+        Token token = peek();
+        if (token == null || !token.getLexeme().equals(lexeme)) {
+            throw new ParseException("Expected '" + lexeme + "'", token != null ? token : lastToken());
+        }
+        position++;
+        return token;
+    }
+
+    private String lookAheadLexeme(int offset) {
+        int index = position + offset;
+        if (index >= tokens.size() || index < 0) {
+            return null;
+        }
+        return tokens.get(index).getLexeme();
+    }
+
+    private Token previous() {
+        return tokens.get(position - 1);
+    }
+
+    private void ensureEOF() throws ParseException {
+        if (!isAtEnd()) {
+            Token token = peek();
+            throw new ParseException("Unexpected token after end of program: " + token.getLexeme(), token);
+        }
+    }
+
+    private Token lastToken() {
+        if (tokens.isEmpty()) {
+            return new Token("<eof>", 0, 0);
+        }
+        return tokens.get(Math.max(0, Math.min(position, tokens.size() - 1)));
+    }
+
+    private boolean startsExpression() {
+        Token token = peek();
+        if (token == null) {
+            return false;
+        }
+        String lexeme = token.getLexeme();
+        return lexeme.equals("(") || lexeme.equals("not") || lexeme.equals("-") ||
+                isLiteralToken(token) || isIdentifier(token);
+    }
+
+    private void ensureParenthesizedArithmeticInAssignment() throws ParseException {
+        if (!check("(") && hasTopLevelArithmeticOperatorAhead()) {
+            Token err = peek();
+            throw new ParseException("Arithmetic expressions must be enclosed in parentheses",
+                    err != null ? err : lastToken());
+        }
+    }
+
+    private boolean hasTopLevelArithmeticOperatorAhead() {
+        int depth = 0;
+        for (int i = position; i < tokens.size(); i++) {
+            String lexeme = tokens.get(i).getLexeme();
+            if (lexeme.equals("(")) {
+                depth++;
+            } else if (lexeme.equals(")")) {
+                if (depth > 0) {
+                    depth--;
+                }
+            } else if (depth == 0 && isArithmeticOperator(lexeme)) {
+                return true;
+            } else if (lexeme.equals(";") || lexeme.equals("end") || lexeme.equals("else")) {
+                break;
+            }
+        }
+        return false;
+    }
 
     private boolean isArithmeticOperator(String lexeme) {
         return lexeme.equals("+") || lexeme.equals("-") || lexeme.equals("*") ||
                 lexeme.equals("/") || lexeme.equals("%");
     }
 
-    private FunctionCall parseFunctionCallExpr(Token funcName) throws ParseException {
-        expect("(");
-        List<Expression> args = new ArrayList<>();package splat.parser;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.HashSet;
-
-import splat.lexer.Token;
-import splat.parser.elements.*;
-
-        public class Parser {
-
-            private List<Token> tokens;
-            private boolean hasErrors = false;
-
-            public Parser(List<Token> tokens) {
-                this.tokens = tokens;
-            }
-
-            private void debug(String msg) {
-                System.err.println("[DEBUG] " + msg);
-            }
-
-            /*-----------------------------------------
-             * Utility methods
-             *----------------------------------------*/
-
-            private Token nextToken() throws ParseException {
-                if (tokens.isEmpty())
-                    throw new ParseException("Unexpected end of input.", null);
-                return tokens.remove(0);
-            }
-
-            private Token expect(String expected) throws ParseException {
-                if (tokens.isEmpty())
-                    throw new ParseException("Unexpected end of input, expected '" + expected + "'", null);
-                Token t = tokens.get(0);
-                if (!t.getLexeme().equals(expected)) {
-                    throw new ParseException("Expected '" + expected + "', got '" + t.getLexeme() + "'.", t);
-                }
-                return tokens.remove(0);
-            }
-
-            private boolean peek(String expected) {
-                return !tokens.isEmpty() && tokens.get(0).getLexeme().equals(expected);
-            }
-
-            private boolean match(String expected) throws ParseException {
-                if (peek(expected)) {
-                    nextToken();
-                    return true;
-                }
-                return false;
-            }
-
-            private void skipStrayTokens() {
-                while (!tokens.isEmpty() && (peek(";") || peek(":"))) {
-                    tokens.remove(0);
-                }
-            }
-
-            private static final Set<String> KEYWORDS = new HashSet<>();
-            static {
-                String[] keys = { "if", "then", "else", "while", "loop", "do",
-                        "begin", "end", "program", "return", "is",
-                        "print", "print_line", "not" };
-                for (String k : keys) KEYWORDS.add(k);
-            }
-
-            private Token checkIdentifier() throws ParseException {
-                if (tokens.isEmpty())
-                    throw new ParseException("Unexpected end of input, expected identifier.", null);
-                Token tok = tokens.get(0);
-                if (!isIdentifier(tok.getLexeme())) {
-                    throw new ParseException("Expected identifier, got '" + tok.getLexeme() + "'", tok);
-                }
-                return tokens.remove(0);
-            }
-
-            private boolean isIdentifier(String val) {
-                return val != null && !val.isEmpty() && !KEYWORDS.contains(val) && val.matches("[A-Za-z_][A-Za-z0-9_]*");
-            }
-
-            private void skipUntil(String... stopTokens) {
-                while (!tokens.isEmpty()) {
-                    String current = tokens.get(0).getLexeme();
-                    for (String stop : stopTokens) {
-                        if (current.equals(stop)) {
-                            return;
-                        }
-                    }
-                    tokens.remove(0);
-                }
-            }
-
-            /*-----------------------------------------
-             * Program
-             *----------------------------------------*/
-            public ProgramAST parse() throws ParseException {
-                if (!tokens.isEmpty()) {
-                    String firstLexeme = tokens.get(0).getLexeme();
-                    // Логируем первые 10 токенов для диагностики
-                    System.err.println("DEBUG PARSER START - First 10 tokens: " +
-                            tokens.subList(0, Math.min(10, tokens.size())));
-                }
-
-                try {
-                    expect("program");
-
-                    // Program name
-                    Token progName;
-                    if (!tokens.isEmpty() && isIdentifier(tokens.get(0).getLexeme())) {
-                        progName = checkIdentifier();
-                    } else {
-                        progName = new Token("main", tokens.isEmpty() ? 0 : tokens.get(0).getLine(),
-                                tokens.isEmpty() ? 0 : tokens.get(0).getCol());
-                    }
-
-                    skipStrayTokens();
-
-                    List<Declaration> decls = parseDecls();
-                    expect("begin");
-                    List<Statement> stmts = parseStmts();
-                    expect("end");
-
-                    if (peek(";")) {
-                        try {
-                            nextToken();
-                        } catch (ParseException e) {
-                            // ignore
-                        }
-                    }
-
-                    return new ProgramAST(decls, stmts, progName);
-                } catch (ParseException e) {
-                    hasErrors = true;
-                    throw e;
-                }
-            }
-
-            /*-----------------------------------------
-             * Declarations
-             *----------------------------------------*/
-            private List<Declaration> parseDecls() {
-                List<Declaration> decls = new ArrayList<>();
-                Set<String> declaredNames = new HashSet<>();
-
-                while (!tokens.isEmpty() && !peek("begin")) {
-                    skipStrayTokens();
-                    if (tokens.isEmpty() || peek("begin")) break;
-
-                    if (isIdentifier(tokens.get(0).getLexeme())) {
-                        try {
-                            String potentialName = tokens.get(0).getLexeme();
-                            if (declaredNames.contains(potentialName)) {
-                                throw new ParseException("Duplicate declaration: '" + potentialName + "'", tokens.get(0));
-                            }
-
-                            Declaration decl = parseDecl();
-                            if (decl != null) {
-                                decls.add(decl);
-                                declaredNames.add(potentialName);
-                            }
-                        } catch (ParseException e) {
-                            skipUntil("begin", "end", ";");
-                        }
-                    } else {
-                        if (!peek("begin")) {
-                            tokens.remove(0);
-                        }
-                    }
-                }
-
-                return decls;
-            }
-
-            private Declaration parseDecl() throws ParseException {
-                System.err.println("DEBUG parseDecl: tokens = " + tokens.subList(0, Math.min(5, tokens.size())));
-
-                Token nameTok = checkIdentifier();
-                System.err.println("DEBUG: nameTok = " + nameTok.getLexeme());
-
-                if (tokens.isEmpty()) {
-                    throw new ParseException("Unexpected end of input after identifier", nameTok);
-                }
-
-                Token next = tokens.get(0);
-                System.err.println("DEBUG: next token = " + next.getLexeme());
-
-                if (next.getLexeme().equals(":")) {
-                    System.err.println("DEBUG: parsing variable declaration");
-                    return parseVariableDecl();
-                } else if (next.getLexeme().equals("is")) {
-                    System.err.println("DEBUG: parsing function without params");
-                    return parseFunctionDeclNoParams(nameTok);
-                } else if (next.getLexeme().equals("(")) {
-                    System.err.println("DEBUG: parsing function with params");
-                    return parseFunctionDecl(nameTok);
-                } else {
-                    System.err.println("DEBUG: throwing parse exception");
-                    throw new ParseException("Expected ':' or 'is' after identifier, got '" + next.getLexeme() + "'", next);
-                }
-            }
-
-
-            private VariableDecl parseVariableDecl() throws ParseException {
-                Token nameTok = checkIdentifier();
-                expect(":");
-                Token typeTok = checkIdentifier();
-
-                if (peek(";")) {
-                    nextToken();
-                }
-
-                return new VariableDecl(nameTok, typeTok);
-            }
-
-
-
-
-            private FunctionDecl parseFunctionDecl(Token nameTok) throws ParseException {
-                expect("(");
-                List<VariableDecl> params = parseParamList();
-
-                Token returnType = null;
-                if (peek(":")) {
-                    nextToken();
-                    returnType = checkIdentifier();
-                }
-
-                expect("is");
-                expect("begin");
-
-                List<VariableDecl> localVars = new ArrayList<>();
-
-                // НА Phase 2 НЕ ПРОВЕРЯЕМ ДУБЛИРОВАНИЕ С ПАРАМЕТРАМИ - это для Phase 3
-                while (!tokens.isEmpty() && isIdentifier(tokens.get(0).getLexeme()) &&
-                        tokens.size() > 1 && tokens.get(1).getLexeme().equals(":")) {
-                    localVars.add(parseVariableDecl());
-                }
-
-                List<Statement> bodyStmts = parseStmts();
-
-                // НА Phase 2 НЕ ПРОВЕРЯЕМ НАЛИЧИЕ RETURN - это для Phase 3
-                expect("end");
-
-                if (!tokens.isEmpty() && tokens.get(0).getLexeme().equals(nameTok.getLexeme())) {
-                    nextToken();
-                }
-
-                if (peek(";")) nextToken();
-
-                return new FunctionDecl(nameTok, params, returnType, localVars, bodyStmts);
-            }
-
-
-            private FunctionDecl parseFunctionDeclNoParams(Token nameTok) throws ParseException {
-                expect("is");
-                expect("begin");
-
-                List<VariableDecl> localVars = new ArrayList<>();
-                while (!tokens.isEmpty() && isIdentifier(tokens.get(0).getLexeme()) &&
-                        tokens.size() > 1 && tokens.get(1).getLexeme().equals(":")) {
-                    localVars.add(parseVariableDecl());
-                }
-
-                List<Statement> bodyStmts = parseStmts();
-                expect("end");
-
-                // Опциональное имя функции после end
-                if (!tokens.isEmpty() && tokens.get(0).getLexeme().equals(nameTok.getLexeme())) {
-                    nextToken();
-                }
-
-                if (peek(";")) nextToken();
-
-                return new FunctionDecl(nameTok, new ArrayList<>(), null, localVars, bodyStmts);
-            }
-
-            private List<VariableDecl> parseParamList() throws ParseException {
-                List<VariableDecl> params = new ArrayList<>();
-                expect("(");
-
-                if (!peek(")")) {
-                    do {
-                        Token paramName = checkIdentifier();
-                        expect(":");
-                        Token paramType = checkIdentifier();
-                        params.add(new VariableDecl(paramName, paramType));
-                    } while (match(","));
-                }
-
-                expect(")");
-                return params;
-            }
-
-            /*-----------------------------------------
-             * Statements - IMPROVED VERSION
-             *----------------------------------------*/
-            private List<Statement> parseStmts() throws ParseException {
-                List<Statement> stmts = new ArrayList<>();
-
-                while (!tokens.isEmpty()) {
-                    String current = tokens.get(0).getLexeme();
-
-                    if (current.equals("end") || current.equals("else")) {
-                        break;
-                    }
-
-                    if (current.equals(";")) {
-                        tokens.remove(0);
-                        continue;
-                    }
-
-                    // Проверка на объявления переменных в statements section
-                    if (isIdentifier(current) && tokens.size() > 1 && tokens.get(1).getLexeme().equals(":")) {
-                        throw new ParseException("Variable declarations are not allowed in statements section", tokens.get(0));
-                    }
-
-                    // Проверка на другие недопустимые конструкции
-                    if (current.equals(":")) {
-                        throw new ParseException("Unexpected ':' in statements section", tokens.get(0));
-                    }
-
-                    // Проверка на недопустимые ключевые слова в statements
-                    if (current.equals("program") || current.equals("is")) {
-                        throw new ParseException("Unexpected keyword in statements section: " + current, tokens.get(0));
-                    }
-
-                    Statement stmt = parseStmt();
-                    stmts.add(stmt);
-                }
-
-                return stmts;
-            }
-
-            // ======================
-// parseStmt() для Phase 2
-// ======================
-            private Statement parseStmt() throws ParseException {
-                if (tokens.isEmpty()) {
-                    throw new ParseException("Unexpected end of input in statement", null);
-                }
-
-                String first = tokens.get(0).getLexeme();
-
-                switch (first) {
-                    case "if":
-                        return parseIf();
-                    case "while":
-                        return parseWhile();
-                    case "print":
-                    case "print_line":
-                        return parsePrint();
-                    case "return":
-                        return parseReturn();
-                    case "begin":
-                        return parseBlock();
-                    default:
-                        if (isIdentifier(first)) {
-                            if (tokens.size() > 1 && tokens.get(1).getLexeme().equals(":=")) {
-                                return parseAssign();
-                            } else if (tokens.size() > 1 && tokens.get(1).getLexeme().equals("(")) {
-                                Token funcName = checkIdentifier();
-                                FunctionCall funcCall = parseFunctionCallExpr(funcName);
-                                expect(";");
-                                return new FunctionCallStmt(funcCall);
-                            } else {
-                                throw new ParseException("Unexpected identifier in statement: " + first, tokens.get(0));
-                            }
-                        }
-
-                        // Любые другие неожиданные токены
-                        throw new ParseException("Unexpected token in statement: " + first, tokens.get(0));
-                }
-            }
-
-
-            private Assignment parseAssign() throws ParseException {
-                // СТРОГАЯ ПРОВЕРКА ТОЛЬКО СИНТАКСИСА: слева от := может быть только идентификатор
-                if (!isIdentifier(tokens.get(0).getLexeme())) {
-                    throw new ParseException("Expected variable name before ':='", tokens.get(0));
-                }
-
-                Token varName = checkIdentifier();
-                expect(":=");
-
-                // Check for arithmetic expressions without parentheses
-                if (!peek("(") && isArithmeticExpressionAhead()) {
-                    throw new ParseException("Arithmetic expressions must be enclosed in parentheses", tokens.get(0));
-                }
-
-                Expression expr = parseExpr();
-
-                if (peek(";")) {
-                    nextToken();
-                }
-
-                return new Assignment(varName, expr);
-            }
-
-            private boolean isArithmeticExpressionAhead() {
-                List<Token> tempTokens = new ArrayList<>(tokens);
-                int parenCount = 0;
-
-                for (int i = 0; i < Math.min(10, tempTokens.size()); i++) {
-                    Token tok = tempTokens.get(i);
-                    String lexeme = tok.getLexeme();
-
-                    if (lexeme.equals("(")) {
-                        parenCount++;
-                    } else if (lexeme.equals(")")) {
-                        parenCount--;
-                    } else if (parenCount == 0 &&
-                            (lexeme.equals("+") || lexeme.equals("-") ||
-                                    lexeme.equals("*") || lexeme.equals("/") || lexeme.equals("%"))) {
-                        return true;
-                    } else if (lexeme.equals(";") || lexeme.equals("end") ||
-                            lexeme.equals("else")) {
-                        break;
-                    }
-
-                    if (parenCount < 0) break;
-                }
-
-                return false;
-            }
-
-            private IfThenElse parseIf() throws ParseException {
-                Token ifToken = expect("if");
-
-                // Проверка, что условие не пустое
-                if (tokens.isEmpty() || peek("then") || peek(";") || peek("end")) {
-                    throw new ParseException("Expected condition after 'if'", ifToken);
-                }
-
-                Expression condition = parseExpr();
-
-                // СТРОГАЯ проверка для 'then'
-                if (tokens.isEmpty()) {
-                    throw new ParseException("Expected 'then' after if condition", ifToken);
-                }
-
-                Token nextToken = tokens.get(0);
-                if (!nextToken.getLexeme().equals("then")) {
-                    throw new ParseException("Expected 'then' after if condition, got '" + nextToken.getLexeme() + "'", nextToken);
-                }
-
-                expect("then");
-
-                List<Statement> thenStmts = parseStmts();
-                List<Statement> elseStmts = new ArrayList<>();
-
-                if (peek("else")) {
-                    expect("else");
-                    elseStmts = parseStmts();
-                }
-
-                expect("end");
-
-                if (peek("if")) {
-                    nextToken();
-                }
-
-                if (peek(";")) {
-                    nextToken();
-                }
-
-                return new IfThenElse(ifToken, condition, thenStmts, elseStmts);
-            }
-
-            private WhileLoop parseWhile() throws ParseException {
-                Token whileToken = expect("while");
-                Expression condition = parseExpr();
-
-                // Allow both 'do' and 'loop' in while loops
-                if (peek("do") || peek("loop")) {
-                    nextToken(); // consume "do" or "loop"
-                } else {
-                    throw new ParseException("Expected 'do' or 'loop' after while condition", tokens.get(0));
-                }
-
-                List<Statement> bodyStmts = parseStmts();
-                expect("end");
-
-                if (peek("while") || peek("loop")) {
-                    nextToken();
-                }
-
-                if (peek(";")) {
-                    nextToken();
-                }
-
-                return new WhileLoop(whileToken, condition, bodyStmts);
-            }
-
-
-            private PrintStmt parsePrint() throws ParseException {
-                Token printToken = nextToken();
-                Expression expr = null;
-
-                boolean isPrintLine = printToken.getLexeme().equals("print_line");
-
-                // Parse expression if present (optional for print_line)
-                if (!tokens.isEmpty() && !peek(";") && !peek("end") && !peek("else")) {
-                    expr = parseExpr();
-                } else if (!isPrintLine) {
-                    // print requires an argument
-                    throw new ParseException("print requires an argument", printToken);
-                }
-
-                if (peek(";")) {
-                    nextToken();
-                }
-
-                return new PrintStmt(printToken, expr);
-            }
-
-
-            private ReturnStmt parseReturn() throws ParseException {
-                Token returnToken = expect("return");
-                Expression expr = null;
-
-                if (!peek(";")) {
-                    expr = parseExpr();
-                }
-
-                if (peek(";")) {
-                    try {
-                        nextToken();
-                    } catch (ParseException e) {
-                        // ignore
-                    }
-                }
-
-                return new ReturnStmt(returnToken, expr);
-            }
-
-            private Block parseBlock() throws ParseException {
-                Token beginToken = expect("begin");
-                List<Statement> stmts = parseStmts();
-                expect("end");
-
-                if (peek(";")) {
-                    try {
-                        nextToken();
-                    } catch (ParseException e) {
-                        // ignore
-                    }
-                }
-
-                return new Block(beginToken, stmts);
-            }
-
-            /*-----------------------------------------
-             * Expressions
-             *----------------------------------------*/
-            private Expression parseExpr() throws ParseException {
-                if (tokens.isEmpty()) {
-                    throw new ParseException("Unexpected end of input in expression", null);
-                }
-
-                // Проверка, что выражение не начинается с недопустимого токена
-                String first = tokens.get(0).getLexeme();
-                if (first.equals(";") || first.equals("end") || first.equals("else") ||
-                        first.equals("then") || first.equals("do") || first.equals("loop")) {
-                    throw new ParseException("Expected expression, got '" + first + "'", tokens.get(0));
-                }
-
-                return parseOrExpr();
-            }
-
-            private Expression parseOrExpr() throws ParseException {
-                Expression left = parseAndExpr();
-
-                while (peek("or")) {
-                    Token op = nextToken();
-                    Expression right = parseAndExpr();
-                    left = new BinaryOp(left, op, right);
-                }
-
-                return left;
-            }
-
-            private Expression parseAndExpr() throws ParseException {
-                Expression left = parseComparison();
-
-                while (peek("and")) {
-                    Token op = nextToken();
-                    Expression right = parseComparison();
-                    left = new BinaryOp(left, op, right);
-                }
-
-                return left;
-            }
-
-            private Expression parseComparison() throws ParseException {
-                Expression left = parseAddSub();
-
-                while (peek("<") || peek("<=") || peek(">") || peek(">=") || peek("==") || peek("!=")) {
-                    Token op = nextToken();
-                    Expression right = parseAddSub();
-                    left = new BinaryOp(left, op, right);
-                }
-
-                return left;
-            }
-
-            private Expression parseAddSub() throws ParseException {
-                Expression left = parseMulDiv();
-
-                while (peek("+") || peek("-")) {
-                    Token op = nextToken();
-                    Expression right = parseMulDiv();
-                    left = new BinaryOp(left, op, right);
-                }
-
-                return left;
-            }
-
-            private Expression parseMulDiv() throws ParseException {
-                Expression left = parseFactor();
-
-                while (peek("*") || peek("/") || peek("%")) {
-                    Token op = nextToken();
-                    Expression right = parseFactor();
-                    left = new BinaryOp(left, op, right);
-                }
-
-                return left;
-            }
-
-            // ======================
-// parseFactor() для Phase 2
-// ======================
-            private Expression parseFactor() throws ParseException {
-                if (tokens.isEmpty()) {
-                    throw new ParseException("Unexpected end of input in factor", null);
-                }
-
-                Token token = tokens.get(0);
-                String lexeme = token.getLexeme();
-
-                if (lexeme.equals("-") || lexeme.equals("not")) {
-                    Token op = nextToken();
-                    Expression expr = parseFactor();
-                    return new UnaryOp(op, expr);
-                }
-
-                if (lexeme.equals("(")) {
-                    nextToken();
-                    Expression expr = parseExpr();
-                    expect(")");
-                    return expr;
-                }
-
-                if (lexeme.matches("\\d+") || (lexeme.startsWith("\"") && lexeme.endsWith("\"")) ||
-                        lexeme.equals("true") || lexeme.equals("false")) {
-                    nextToken();
-                    return new Literal(token);
-                }
-
-                if (isIdentifier(lexeme)) {
-                    nextToken();
-
-                    if (peek("(")) {
-                        return parseFunctionCallExpr(token);
-                    }
-
-                    return new VariableRef(token);
-                }
-
-                throw new ParseException("Unexpected token in factor: " + lexeme, token);
-            }
-
-
-            private boolean isArithmeticOperator(String lexeme) {
-                return lexeme.equals("+") || lexeme.equals("-") || lexeme.equals("*") ||
-                        lexeme.equals("/") || lexeme.equals("%");
-            }
-
-            private FunctionCall parseFunctionCallExpr(Token funcName) throws ParseException {
-                expect("(");
-                List<Expression> args = new ArrayList<>();
-
-                if (!peek(")")) {
-                    do {
-                        Expression arg = parseExpr();
-                        args.add(arg);
-                    } while (match(","));
-                }
-
-                expect(")");
-                return new FunctionCall(funcName, args);
-            }
+    private boolean isParenthesizedStringLiteral() {
+        if (!check("(")) {
+            return false;
         }
-
-        if (!peek(")")) {
-            do {
-                Expression arg = parseExpr();
-                args.add(arg);
-            } while (match(","));
+        if (position + 2 >= tokens.size()) {
+            return false;
         }
+        Token literal = tokens.get(position + 1);
+        Token closing = tokens.get(position + 2);
+        return isStringLiteral(literal) && ")".equals(closing.getLexeme());
+    }
 
-        expect(")");
-        return new FunctionCall(funcName, args);
+    private boolean isStringLiteral(Token token) {
+        if (token == null) {
+            return false;
+        }
+        String lexeme = token.getLexeme();
+        return lexeme.startsWith("\"") && lexeme.endsWith("\"");
     }
 }

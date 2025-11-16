@@ -1,7 +1,11 @@
 package splat.parser.elements;
 
 import java.util.List;
+import java.util.Map;
+
 import splat.lexer.Token;
+import splat.semanticanalyzer.SemanticAnalysisException;
+import splat.semanticanalyzer.Type;
 
 public class Block extends Statement {
     private List<Statement> statements;
@@ -18,5 +22,13 @@ public class Block extends Statement {
     @Override
     public Token getStartToken() {
         return super.getStartToken();
+    }
+
+    @Override
+    public void analyze(Map<String, FunctionDecl> funcMap,
+                        Map<String, Type> varAndParamMap) throws SemanticAnalysisException {
+        for (Statement stmt : statements) {
+            stmt.analyze(funcMap, varAndParamMap);
+        }
     }
 }

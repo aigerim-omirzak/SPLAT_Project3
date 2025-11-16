@@ -1,7 +1,11 @@
 package splat.parser.elements;
 
-import splat.lexer.Token;
 import java.util.List;
+import java.util.Map;
+
+import splat.lexer.Token;
+import splat.semanticanalyzer.SemanticAnalysisException;
+import splat.semanticanalyzer.Type;
 
 public class IfThenElse extends Statement {
     private Expression condition;
@@ -25,4 +29,22 @@ public class IfThenElse extends Statement {
     public Expression getCondition() { return condition; }
     public List<Statement> getThenStmts() { return thenStmts; }
     public List<Statement> getElseStmts() { return elseStmts; }
+
+    @Override
+    public void analyze(Map<String, FunctionDecl> funcMap,
+                        Map<String, Type> varAndParamMap) throws SemanticAnalysisException {
+        Type condType = condition.analyzeAndGetType(funcMap, varAndParamMap);
+        if (condType != Type.BOOLEAN) {
+            throw new SemanticAnalysisException(
+                    "If condition must be Boolean",
+                    condition.getLine(), condition.getColumn());
+        }
+
+        for (Statement stmt : thenStmts) {
+            stmt.analyze(funcMap, varAndParamMap);
+        }
+        for (Statement stmt : elseStmts) {
+            stmt.analyze(funcMap, varAndParamMap);
+        }
+    }
 }
