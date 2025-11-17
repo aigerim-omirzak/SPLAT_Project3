@@ -4,6 +4,7 @@ import java.util.List;
 import splat.lexer.Token;
 
 public class FunctionDecl extends Declaration {
+    private final Token name;
     private final List<VariableDecl> params;
     private final Token returnType;
     private final List<VariableDecl> localVars;
@@ -12,6 +13,7 @@ public class FunctionDecl extends Declaration {
     public FunctionDecl(Token name, List<VariableDecl> params, Token returnType,
                         List<VariableDecl> localVars, List<Statement> body) {
         super(name);
+        this.name = name;
         this.params = params;
         this.returnType = returnType;
         this.localVars = localVars;
@@ -19,31 +21,15 @@ public class FunctionDecl extends Declaration {
     }
 
     public Token getName() {
-        return getLabel();
+        return name;
     }
 
-    public List<VariableDecl> getParams() {
-        return params;
-    }
-
-    public Token getReturnType() {
-        return returnType;
-    }
-
-    public List<VariableDecl> getLocalVars() {
-        return localVars;
-    }
-
-    public List<Statement> getBody() {
-        return body;
-    }
 
     @Override
     public String toString() {
-        String ret = (returnType == null) ? "void" : returnType.getLexeme();
         return String.format(
                 "FunctionDecl(name=%s, params=%s, returnType=%s)",
-                getName().getLexeme(), params, ret
+                getName().getLexeme(), params, returnType.getLexeme()
         );
     }
 }
