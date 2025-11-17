@@ -8,7 +8,6 @@ import splat.lexer.Token;
 import splat.parser.Parser;
 import splat.parser.ParseException;
 import splat.parser.elements.ProgramAST;
-import splat.semanticanalyzer.SemanticAnalyzer;
 
 public class Splat {
 
@@ -28,9 +27,9 @@ public class Splat {
 		 Parser parser = new Parser(tokens);
 		 ProgramAST progAST = parser.parse();
 		
-                // Step 3.  Semantic Analysis
-                SemanticAnalyzer analyzer = new SemanticAnalyzer(progAST);
-                analyzer.analyze();
+		// Step 3.  Semantic Analysis
+		 SemanticAnalyzer analyzer = new SemanticAnalyzer(progAST);
+		 analyzer.analyze();
 		
 		// Step 4.  Executor
 		// Executor executor = new Executor(progAST);

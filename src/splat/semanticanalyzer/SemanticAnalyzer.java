@@ -1,198 +1,109 @@
 package splat.semanticanalyzer;
 
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import splat.parser.elements.Block;
 import splat.parser.elements.Declaration;
-import splat.parser.elements.Expression;
 import splat.parser.elements.FunctionDecl;
-import splat.parser.elements.IfThenElse;
 import splat.parser.elements.ProgramAST;
-import splat.parser.elements.ReturnStmt;
 import splat.parser.elements.Statement;
+import splat.parser.elements.Type;
 import splat.parser.elements.VariableDecl;
-import splat.parser.elements.WhileLoop;
 
 public class SemanticAnalyzer {
 
-    private final ProgramAST program;
-    private final Map<String, FunctionDecl> functionByName;
-    private final Map<String, String> globalVariableTypes;
+	private ProgramAST progAST;
+	
+	private Map<String, FunctionDecl> funcMap;
+	private Map<String, Type> progVarMap;
+	
+	public SemanticAnalyzer(ProgramAST progAST) {
+		this.progAST = progAST;
+	}
 
-    public SemanticAnalyzer(ProgramAST program) {
-        this.program = program;
-        this.functionByName = new HashMap<>();
-        this.globalVariableTypes = new HashMap<>();
-    }
+	public void analyze() throws SemanticAnalysisException {
+		
+		// Checks to make sure we don't use the same labels more than once
+		// for our program functions and variables 
+		checkNoDuplicateProgLabels();
+		
+		// This sets the maps that will be needed later when we need to
+		// typecheck variable references and function calls in the 
+		// program body
+		setProgVarAndFuncMaps();
+		
+		// Perform semantic analysis on the functions
+		for (FunctionDecl funcDecl : funcMap.values()) {	
+			analyzeFuncDecl(funcDecl);
+		}
+		
+		// Perform semantic analysis on the program body
+		for (Statement stmt : progAST.getStmts()) {
+			stmt.analyze(funcMap, progVarMap);
+		}
+		
+	}
 
-    public void analyze() throws SemanticAnalysisException {
-        collectGlobalDeclarations();
-        analyzeFunctions();
-        analyzeProgramBody();
-    }
+	private void analyzeFuncDecl(FunctionDecl funcDecl) throws SemanticAnalysisException {
+		
+		// Checks to make sure we don't use the same labels more than once
+		// among our function parameters, local variables, and function names
+		checkNoDuplicateFuncLabels(funcDecl);
+		
+		// Get the types of the parameters and local variables
+		Map<String, Type> varAndParamMap = getVarAndParamMap(funcDecl);
+		
+		// Perform semantic analysis on the function body
+		for (Statement stmt : funcDecl.getStmts()) {
+			stmt.analyze(funcMap, varAndParamMap);
+		}
+	}
+	
+	
+	private Map<String, Type> getVarAndParamMap(FunctionDecl funcDecl) {
+		
+		// FIXME: Somewhat similar to setProgVarAndFuncMaps()
+		return null;
+	}
 
-    private void collectGlobalDeclarations() throws SemanticAnalysisException {
-        Set<String> declaredLabels = new HashSet<>();
-        for (Declaration decl : program.getDecls()) {
-            String label = decl.getLabelLexeme();
-            ensureUniqueGlobalLabel(declaredLabels, decl, label);
-            registerGlobalDeclaration(decl, label);
-        }
-    }
+	private void checkNoDuplicateFuncLabels(FunctionDecl funcDecl) 
+									throws SemanticAnalysisException {
+		
+		// FIXME: Similar to checkNoDuplicateProgLabels()
+	}
+	
+	private void checkNoDuplicateProgLabels() throws SemanticAnalysisException {
+		
+		Set<String> labels = new HashSet<String>();
+		
+ 		for (Declaration decl : progAST.getDecls()) {
+ 			String label = decl.getLabel().toString();
+ 			
+			if (labels.contains(label)) {
+				throw new SemanticAnalysisException("Cannot have duplicate label '"
+						+ label + "' in program", decl);
+			} else {
+				labels.add(label);
+			}
+			
+		}
+	}
+	
+	private void setProgVarAndFuncMaps() {
+		
+		for (Declaration decl : progAST.getDecls()) {
 
-    private void analyzeFunctions() throws SemanticAnalysisException {
-        for (FunctionDecl functionDecl : functionByName.values()) {
-            analyzeFunction(functionDecl);
-        }
-    }
-
-    private void analyzeFunction(FunctionDecl functionDecl) throws SemanticAnalysisException {
-        Map<String, String> typeEnvironment = new HashMap<>();
-        Set<String> namesInFunction = new HashSet<>();
-
-        populateVariableTypes(functionDecl.getParams(), "Parameters cannot be declared with type void",
-                typeEnvironment, namesInFunction);
-        populateVariableTypes(functionDecl.getLocalVars(), "Local variables cannot be declared with type void",
-                typeEnvironment, namesInFunction);
-
-        String returnType = Types.fromToken(functionDecl.getReturnType());
-        typeEnvironment.put(Statement.RETURN_TYPE_SLOT, returnType);
-
-        List<Statement> body = functionDecl.getBody();
-        if (body != null) {
-            for (Statement stmt : body) {
-                stmt.analyze(functionByName, typeEnvironment);
-            }
-        }
-
-        if (!Types.VOID.equals(returnType) && !containsReturn(body)) {
-            throw new SemanticAnalysisException(
-                    "Function '" + functionDecl.getName().getLexeme() + "' must return a value",
-                    functionDecl.getLine(), functionDecl.getColumn());
-        }
-    }
-
-    private void analyzeProgramBody() throws SemanticAnalysisException {
-        Map<String, String> scope = new HashMap<>(globalVariableTypes);
-        for (Statement stmt : program.getStmts()) {
-            stmt.analyze(functionByName, scope);
-        }
-    }
-
-    public static String analyzeAndGetType(Expression expr,
-                                           Map<String, FunctionDecl> funcMap,
-                                           Map<String, String> varAndParamMap)
-            throws SemanticAnalysisException {
-        if (expr == null) {
-            return Types.VOID;
-        }
-        return expr.analyzeAndGetType(funcMap, varAndParamMap);
-    }
-
-    private void ensureUniqueGlobalLabel(Set<String> labels, Declaration decl, String label)
-            throws SemanticAnalysisException {
-        if (!labels.add(label)) {
-            throw new SemanticAnalysisException(
-                    "Duplicate declaration: '" + label + "'",
-                    decl.getLine(), decl.getColumn());
-        }
-    }
-
-    private void registerGlobalDeclaration(Declaration decl, String label) throws SemanticAnalysisException {
-        if (decl instanceof VariableDecl) {
-            registerGlobalVariable((VariableDecl) decl, label);
-        } else if (decl instanceof FunctionDecl) {
-            functionByName.put(label, (FunctionDecl) decl);
-        }
-    }
-
-    private void registerGlobalVariable(VariableDecl varDecl, String label) throws SemanticAnalysisException {
-        String type = Types.fromToken(varDecl.getType());
-        if (Types.VOID.equals(type)) {
-            throw new SemanticAnalysisException(
-                    "Variables cannot be declared with type void",
-                    varDecl.getLine(), varDecl.getColumn());
-        }
-        globalVariableTypes.put(label, type);
-    }
-
-    private void registerLocalName(VariableDecl decl, Set<String> names) throws SemanticAnalysisException {
-        String label = decl.getName().getLexeme();
-        if (!names.add(label)) {
-            throw new SemanticAnalysisException(
-                    "Duplicate declaration inside function: '" + label + "'",
-                    decl.getLine(), decl.getColumn());
-        }
-    }
-
-    private void ensureNotFunctionName(String name, int line, int column) throws SemanticAnalysisException {
-        if (functionByName.containsKey(name)) {
-            throw new SemanticAnalysisException(
-                    "Identifier '" + name + "' conflicts with an existing function name",
-                    line, column);
-        }
-    }
-
-    private void populateVariableTypes(List<VariableDecl> declarations,
-                                       String voidErrorMessage,
-                                       Map<String, String> typeEnvironment,
-                                       Set<String> namesInFunction) throws SemanticAnalysisException {
-        if (declarations == null) {
-            return;
-        }
-
-        for (VariableDecl declaration : declarations) {
-            registerLocalName(declaration, namesInFunction);
-            ensureNotFunctionName(declaration.getName().getLexeme(),
-                    declaration.getLine(), declaration.getColumn());
-
-            String type = Types.fromToken(declaration.getType());
-            if (Types.VOID.equals(type)) {
-                throw new SemanticAnalysisException(
-                        voidErrorMessage,
-                        declaration.getLine(), declaration.getColumn());
-            }
-
-            typeEnvironment.put(declaration.getName().getLexeme(), type);
-        }
-    }
-
-    private boolean containsReturn(List<Statement> statements) {
-        if (statements == null) {
-            return false;
-        }
-
-        for (Statement stmt : statements) {
-            if (statementContainsReturn(stmt)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private boolean statementContainsReturn(Statement statement) {
-        if (statement instanceof ReturnStmt) {
-            return true;
-        }
-
-        if (statement instanceof IfThenElse) {
-            IfThenElse ite = (IfThenElse) statement;
-            return containsReturn(ite.getThenStmts()) || containsReturn(ite.getElseStmts());
-        }
-
-        if (statement instanceof WhileLoop) {
-            return containsReturn(((WhileLoop) statement).getBody());
-        }
-
-        if (statement instanceof Block) {
-            return containsReturn(((Block) statement).getStatements());
-        }
-
-        return false;
-    }
+			String label = decl.getLabel().toString();
+			
+			if (decl instanceof FunctionDecl) {
+				FunctionDecl funcDecl = (FunctionDecl)decl;
+				funcMap.put(label, funcDecl);
+				
+			} else if (decl instanceof VariableDecl) {
+				VariableDecl varDecl = (VariableDecl)decl;
+				progVarMap.put(label, varDecl.getType());
+			}
+		}
+	}
 }
