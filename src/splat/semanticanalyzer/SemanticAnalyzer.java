@@ -19,13 +19,13 @@ import splat.parser.elements.WhileLoop;
 public class SemanticAnalyzer {
 
     private final ProgramAST program;
-    private final Map<String, FunctionDecl> functionMap;
-    private final Map<String, Type> globalVarMap;
+    private final Map<String, FunctionDecl> functionByName;
+    private final Map<String, Type> globalVariableTypes;
 
     public SemanticAnalyzer(ProgramAST program) {
         this.program = program;
-        this.functionMap = new HashMap<>();
-        this.globalVarMap = new HashMap<>();
+        this.functionByName = new HashMap<>();
+        this.globalVariableTypes = new HashMap<>();
     }
 
     public void analyze() throws SemanticAnalysisException {
@@ -35,79 +35,36 @@ public class SemanticAnalyzer {
     }
 
     private void collectGlobalDeclarations() throws SemanticAnalysisException {
-        Set<String> labels = new HashSet<>();
+        Set<String> declaredLabels = new HashSet<>();
         for (Declaration decl : program.getDecls()) {
             String label = decl.getLabelLexeme();
-            if (!labels.add(label)) {
-                throw new SemanticAnalysisException(
-                        "Duplicate declaration: '" + label + "'",
-                        decl.getLine(), decl.getColumn());
-            }
-
-            if (decl instanceof VariableDecl) {
-                VariableDecl varDecl = (VariableDecl) decl;
-                Type type = Type.fromToken(varDecl.getType());
-                if (type == Type.VOID) {
-                    throw new SemanticAnalysisException(
-                            "Variables cannot be declared with type void",
-                            varDecl.getLine(), varDecl.getColumn());
-                }
-                globalVarMap.put(label, type);
-            } else if (decl instanceof FunctionDecl) {
-                functionMap.put(label, (FunctionDecl) decl);
-            }
+            ensureUniqueGlobalLabel(declaredLabels, decl, label);
+            registerGlobalDeclaration(decl, label);
         }
     }
 
     private void analyzeFunctions() throws SemanticAnalysisException {
-        for (FunctionDecl functionDecl : functionMap.values()) {
+        for (FunctionDecl functionDecl : functionByName.values()) {
             analyzeFunction(functionDecl);
         }
     }
 
     private void analyzeFunction(FunctionDecl functionDecl) throws SemanticAnalysisException {
-        Map<String, Type> scope = new HashMap<>();
-        Set<String> localNames = new HashSet<>();
+        Map<String, Type> typeEnvironment = new HashMap<>();
+        Set<String> namesInFunction = new HashSet<>();
 
-        // Parameters
-        List<VariableDecl> params = functionDecl.getParams();
-        if (params != null) {
-            for (VariableDecl param : params) {
-                registerLocalName(param, localNames);
-                ensureNotFunctionName(param.getName().getLexeme(), param.getLine(), param.getColumn());
-                Type type = Type.fromToken(param.getType());
-                if (type == Type.VOID) {
-                    throw new SemanticAnalysisException(
-                            "Parameters cannot be declared with type void",
-                            param.getLine(), param.getColumn());
-                }
-                scope.put(param.getName().getLexeme(), type);
-            }
-        }
-
-        // Local variables
-        List<VariableDecl> locals = functionDecl.getLocalVars();
-        if (locals != null) {
-            for (VariableDecl localVar : locals) {
-                registerLocalName(localVar, localNames);
-                ensureNotFunctionName(localVar.getName().getLexeme(), localVar.getLine(), localVar.getColumn());
-                Type type = Type.fromToken(localVar.getType());
-                if (type == Type.VOID) {
-                    throw new SemanticAnalysisException(
-                            "Local variables cannot be declared with type void",
-                            localVar.getLine(), localVar.getColumn());
-                }
-                scope.put(localVar.getName().getLexeme(), type);
-            }
-        }
+        populateVariableTypes(functionDecl.getParams(), "Parameters cannot be declared with type void",
+                typeEnvironment, namesInFunction);
+        populateVariableTypes(functionDecl.getLocalVars(), "Local variables cannot be declared with type void",
+                typeEnvironment, namesInFunction);
 
         Type returnType = Type.fromToken(functionDecl.getReturnType());
-        scope.put(Statement.RETURN_TYPE_SLOT, returnType);
+        typeEnvironment.put(Statement.RETURN_TYPE_SLOT, returnType);
 
         List<Statement> body = functionDecl.getBody();
         if (body != null) {
             for (Statement stmt : body) {
-                stmt.analyze(functionMap, scope);
+                stmt.analyze(functionByName, typeEnvironment);
             }
         }
 
@@ -119,10 +76,37 @@ public class SemanticAnalyzer {
     }
 
     private void analyzeProgramBody() throws SemanticAnalysisException {
-        Map<String, Type> scope = new HashMap<>(globalVarMap);
+        Map<String, Type> scope = new HashMap<>(globalVariableTypes);
         for (Statement stmt : program.getStmts()) {
-            stmt.analyze(functionMap, scope);
+            stmt.analyze(functionByName, scope);
         }
+    }
+
+    private void ensureUniqueGlobalLabel(Set<String> labels, Declaration decl, String label)
+            throws SemanticAnalysisException {
+        if (!labels.add(label)) {
+            throw new SemanticAnalysisException(
+                    "Duplicate declaration: '" + label + "'",
+                    decl.getLine(), decl.getColumn());
+        }
+    }
+
+    private void registerGlobalDeclaration(Declaration decl, String label) throws SemanticAnalysisException {
+        if (decl instanceof VariableDecl) {
+            registerGlobalVariable((VariableDecl) decl, label);
+        } else if (decl instanceof FunctionDecl) {
+            functionByName.put(label, (FunctionDecl) decl);
+        }
+    }
+
+    private void registerGlobalVariable(VariableDecl varDecl, String label) throws SemanticAnalysisException {
+        Type type = Type.fromToken(varDecl.getType());
+        if (type == Type.VOID) {
+            throw new SemanticAnalysisException(
+                    "Variables cannot be declared with type void",
+                    varDecl.getLine(), varDecl.getColumn());
+        }
+        globalVariableTypes.put(label, type);
     }
 
     private void registerLocalName(VariableDecl decl, Set<String> names) throws SemanticAnalysisException {
@@ -135,10 +119,34 @@ public class SemanticAnalyzer {
     }
 
     private void ensureNotFunctionName(String name, int line, int column) throws SemanticAnalysisException {
-        if (functionMap.containsKey(name)) {
+        if (functionByName.containsKey(name)) {
             throw new SemanticAnalysisException(
                     "Identifier '" + name + "' conflicts with an existing function name",
                     line, column);
+        }
+    }
+
+    private void populateVariableTypes(List<VariableDecl> declarations,
+                                       String voidErrorMessage,
+                                       Map<String, Type> typeEnvironment,
+                                       Set<String> namesInFunction) throws SemanticAnalysisException {
+        if (declarations == null) {
+            return;
+        }
+
+        for (VariableDecl declaration : declarations) {
+            registerLocalName(declaration, namesInFunction);
+            ensureNotFunctionName(declaration.getName().getLexeme(),
+                    declaration.getLine(), declaration.getColumn());
+
+            Type type = Type.fromToken(declaration.getType());
+            if (type == Type.VOID) {
+                throw new SemanticAnalysisException(
+                        voidErrorMessage,
+                        declaration.getLine(), declaration.getColumn());
+            }
+
+            typeEnvironment.put(declaration.getName().getLexeme(), type);
         }
     }
 
@@ -148,24 +156,30 @@ public class SemanticAnalyzer {
         }
 
         for (Statement stmt : statements) {
-            if (stmt instanceof ReturnStmt) {
+            if (statementContainsReturn(stmt)) {
                 return true;
             }
+        }
 
-            if (stmt instanceof IfThenElse) {
-                IfThenElse ite = (IfThenElse) stmt;
-                if (containsReturn(ite.getThenStmts()) || containsReturn(ite.getElseStmts())) {
-                    return true;
-                }
-            } else if (stmt instanceof WhileLoop) {
-                if (containsReturn(((WhileLoop) stmt).getBody())) {
-                    return true;
-                }
-            } else if (stmt instanceof Block) {
-                if (containsReturn(((Block) stmt).getStatements())) {
-                    return true;
-                }
-            }
+        return false;
+    }
+
+    private boolean statementContainsReturn(Statement statement) {
+        if (statement instanceof ReturnStmt) {
+            return true;
+        }
+
+        if (statement instanceof IfThenElse) {
+            IfThenElse ite = (IfThenElse) statement;
+            return containsReturn(ite.getThenStmts()) || containsReturn(ite.getElseStmts());
+        }
+
+        if (statement instanceof WhileLoop) {
+            return containsReturn(((WhileLoop) statement).getBody());
+        }
+
+        if (statement instanceof Block) {
+            return containsReturn(((Block) statement).getStatements());
         }
 
         return false;
