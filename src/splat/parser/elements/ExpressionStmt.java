@@ -3,7 +3,7 @@ package splat.parser.elements;
 import java.util.Map;
 
 import splat.semanticanalyzer.SemanticAnalysisException;
-import splat.semanticanalyzer.Type;
+import splat.semanticanalyzer.Types;
 
 public class ExpressionStmt extends Statement {
     private Expression expr;
@@ -19,9 +19,9 @@ public class ExpressionStmt extends Statement {
 
     @Override
     public void analyze(Map<String, FunctionDecl> funcMap,
-                        Map<String, Type> varAndParamMap) throws SemanticAnalysisException {
-        Type type = expr.analyzeAndGetType(funcMap, varAndParamMap);
-        if (type == Type.VOID) {
+                        Map<String, String> varAndParamMap) throws SemanticAnalysisException {
+        String type = expr.analyzeAndGetType(funcMap, varAndParamMap);
+        if (Types.VOID.equals(type)) {
             throw new SemanticAnalysisException(
                     "Expression statement cannot be void",
                     expr.getLine(), expr.getColumn());

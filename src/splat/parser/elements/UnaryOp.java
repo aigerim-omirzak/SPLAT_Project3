@@ -4,7 +4,7 @@ import java.util.Map;
 
 import splat.lexer.Token;
 import splat.semanticanalyzer.SemanticAnalysisException;
-import splat.semanticanalyzer.Type;
+import splat.semanticanalyzer.Types;
 
 public class UnaryOp extends Expression {
     private final Token op;
@@ -30,27 +30,27 @@ public class UnaryOp extends Expression {
     }
 
     @Override
-    public Type analyzeAndGetType(Map<String, FunctionDecl> funcMap,
-                                  Map<String, Type> varAndParamMap) throws SemanticAnalysisException {
-        Type childType = expr.analyzeAndGetType(funcMap, varAndParamMap);
+    public String analyzeAndGetType(Map<String, FunctionDecl> funcMap,
+                                    Map<String, String> varAndParamMap) throws SemanticAnalysisException {
+        String childType = expr.analyzeAndGetType(funcMap, varAndParamMap);
         String opLexeme = op.getLexeme();
 
         if ("-".equals(opLexeme)) {
-            if (childType != Type.INTEGER) {
+            if (!Types.INTEGER.equals(childType)) {
                 throw new SemanticAnalysisException(
                         "Unary '-' requires an integer operand",
                         op.getLine(), op.getCol());
             }
-            return Type.INTEGER;
+            return Types.INTEGER;
         }
 
         if ("not".equals(opLexeme)) {
-            if (childType != Type.BOOLEAN) {
+            if (!Types.BOOLEAN.equals(childType)) {
                 throw new SemanticAnalysisException(
                         "'not' requires a boolean operand",
                         op.getLine(), op.getCol());
             }
-            return Type.BOOLEAN;
+            return Types.BOOLEAN;
         }
 
         throw new SemanticAnalysisException(

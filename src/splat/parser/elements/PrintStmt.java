@@ -4,7 +4,7 @@ import java.util.Map;
 
 import splat.lexer.Token;
 import splat.semanticanalyzer.SemanticAnalysisException;
-import splat.semanticanalyzer.Type;
+import splat.semanticanalyzer.Types;
 
 public class PrintStmt extends Statement {
     private Expression expr;
@@ -29,7 +29,7 @@ public class PrintStmt extends Statement {
 
     @Override
     public void analyze(Map<String, FunctionDecl> funcMap,
-                        Map<String, Type> varAndParamMap) throws SemanticAnalysisException {
+                        Map<String, String> varAndParamMap) throws SemanticAnalysisException {
         String keyword = getStartToken().getLexeme();
         boolean isPrintLine = "print_line".equals(keyword);
 
@@ -42,21 +42,21 @@ public class PrintStmt extends Statement {
             return;
         }
 
-        Type type = expr.analyzeAndGetType(funcMap, varAndParamMap);
+        String type = expr.analyzeAndGetType(funcMap, varAndParamMap);
         if (!isPrintable(type)) {
             throw new SemanticAnalysisException(
                     "Cannot print expressions of type " + type,
                     expr.getLine(), expr.getColumn());
         }
 
-        if (isPrintLine && type == Type.VOID) {
+        if (isPrintLine && Types.VOID.equals(type)) {
             throw new SemanticAnalysisException(
                     "print_line cannot print void expressions",
                     expr.getLine(), expr.getColumn());
         }
     }
 
-    private boolean isPrintable(Type type) {
-        return type == Type.INTEGER || type == Type.STRING || type == Type.BOOLEAN;
+    private boolean isPrintable(String type) {
+        return Types.INTEGER.equals(type) || Types.STRING.equals(type) || Types.BOOLEAN.equals(type);
     }
 }

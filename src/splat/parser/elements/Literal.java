@@ -4,7 +4,7 @@ import java.util.Map;
 
 import splat.lexer.Token;
 import splat.semanticanalyzer.SemanticAnalysisException;
-import splat.semanticanalyzer.Type;
+import splat.semanticanalyzer.Types;
 
 public class Literal extends Expression {
     private String value;
@@ -39,16 +39,16 @@ public class Literal extends Expression {
     }
 
     @Override
-    public Type analyzeAndGetType(Map<String, FunctionDecl> funcMap,
-                                  Map<String, Type> varAndParamMap) throws SemanticAnalysisException {
+    public String analyzeAndGetType(Map<String, FunctionDecl> funcMap,
+                                    Map<String, String> varAndParamMap) throws SemanticAnalysisException {
         if (isIntegerLiteral()) {
-            return Type.INTEGER;
+            return Types.INTEGER;
         }
         if (isBooleanLiteral()) {
-            return Type.BOOLEAN;
+            return Types.BOOLEAN;
         }
         if (isStringLiteral()) {
-            return Type.STRING;
+            return Types.STRING;
         }
 
         throw new SemanticAnalysisException(

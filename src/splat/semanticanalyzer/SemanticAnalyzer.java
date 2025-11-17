@@ -8,6 +8,7 @@ import java.util.Set;
 
 import splat.parser.elements.Block;
 import splat.parser.elements.Declaration;
+import splat.parser.elements.Expression;
 import splat.parser.elements.FunctionDecl;
 import splat.parser.elements.IfThenElse;
 import splat.parser.elements.ProgramAST;
@@ -20,7 +21,7 @@ public class SemanticAnalyzer {
 
     private final ProgramAST program;
     private final Map<String, FunctionDecl> functionByName;
-    private final Map<String, Type> globalVariableTypes;
+    private final Map<String, String> globalVariableTypes;
 
     public SemanticAnalyzer(ProgramAST program) {
         this.program = program;
@@ -50,7 +51,7 @@ public class SemanticAnalyzer {
     }
 
     private void analyzeFunction(FunctionDecl functionDecl) throws SemanticAnalysisException {
-        Map<String, Type> typeEnvironment = new HashMap<>();
+        Map<String, String> typeEnvironment = new HashMap<>();
         Set<String> namesInFunction = new HashSet<>();
 
         populateVariableTypes(functionDecl.getParams(), "Parameters cannot be declared with type void",
@@ -58,7 +59,7 @@ public class SemanticAnalyzer {
         populateVariableTypes(functionDecl.getLocalVars(), "Local variables cannot be declared with type void",
                 typeEnvironment, namesInFunction);
 
-        Type returnType = Type.fromToken(functionDecl.getReturnType());
+        String returnType = Types.fromToken(functionDecl.getReturnType());
         typeEnvironment.put(Statement.RETURN_TYPE_SLOT, returnType);
 
         List<Statement> body = functionDecl.getBody();
@@ -68,7 +69,7 @@ public class SemanticAnalyzer {
             }
         }
 
-        if (returnType != Type.VOID && !containsReturn(body)) {
+        if (!Types.VOID.equals(returnType) && !containsReturn(body)) {
             throw new SemanticAnalysisException(
                     "Function '" + functionDecl.getName().getLexeme() + "' must return a value",
                     functionDecl.getLine(), functionDecl.getColumn());
@@ -76,10 +77,20 @@ public class SemanticAnalyzer {
     }
 
     private void analyzeProgramBody() throws SemanticAnalysisException {
-        Map<String, Type> scope = new HashMap<>(globalVariableTypes);
+        Map<String, String> scope = new HashMap<>(globalVariableTypes);
         for (Statement stmt : program.getStmts()) {
             stmt.analyze(functionByName, scope);
         }
+    }
+
+    public static String analyzeAndGetType(Expression expr,
+                                           Map<String, FunctionDecl> funcMap,
+                                           Map<String, String> varAndParamMap)
+            throws SemanticAnalysisException {
+        if (expr == null) {
+            return Types.VOID;
+        }
+        return expr.analyzeAndGetType(funcMap, varAndParamMap);
     }
 
     private void ensureUniqueGlobalLabel(Set<String> labels, Declaration decl, String label)
@@ -100,8 +111,8 @@ public class SemanticAnalyzer {
     }
 
     private void registerGlobalVariable(VariableDecl varDecl, String label) throws SemanticAnalysisException {
-        Type type = Type.fromToken(varDecl.getType());
-        if (type == Type.VOID) {
+        String type = Types.fromToken(varDecl.getType());
+        if (Types.VOID.equals(type)) {
             throw new SemanticAnalysisException(
                     "Variables cannot be declared with type void",
                     varDecl.getLine(), varDecl.getColumn());
@@ -128,7 +139,7 @@ public class SemanticAnalyzer {
 
     private void populateVariableTypes(List<VariableDecl> declarations,
                                        String voidErrorMessage,
-                                       Map<String, Type> typeEnvironment,
+                                       Map<String, String> typeEnvironment,
                                        Set<String> namesInFunction) throws SemanticAnalysisException {
         if (declarations == null) {
             return;
@@ -139,8 +150,8 @@ public class SemanticAnalyzer {
             ensureNotFunctionName(declaration.getName().getLexeme(),
                     declaration.getLine(), declaration.getColumn());
 
-            Type type = Type.fromToken(declaration.getType());
-            if (type == Type.VOID) {
+            String type = Types.fromToken(declaration.getType());
+            if (Types.VOID.equals(type)) {
                 throw new SemanticAnalysisException(
                         voidErrorMessage,
                         declaration.getLine(), declaration.getColumn());

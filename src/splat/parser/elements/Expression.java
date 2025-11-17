@@ -4,7 +4,6 @@ import java.util.Map;
 
 import splat.lexer.Token;
 import splat.semanticanalyzer.SemanticAnalysisException;
-import splat.semanticanalyzer.Type;
 
 public abstract class Expression extends ASTElement {
 
@@ -15,8 +14,8 @@ public abstract class Expression extends ASTElement {
     /**
      * Performs semantic analysis on this expression and returns its type.
      */
-    public abstract Type analyzeAndGetType(Map<String, FunctionDecl> funcMap,
-                                           Map<String, Type> varAndParamMap)
+    public abstract String analyzeAndGetType(Map<String, FunctionDecl> funcMap,
+                                             Map<String, String> varAndParamMap)
             throws SemanticAnalysisException;
 
     /**

@@ -5,7 +5,7 @@ import java.util.Map;
 
 import splat.lexer.Token;
 import splat.semanticanalyzer.SemanticAnalysisException;
-import splat.semanticanalyzer.Type;
+import splat.semanticanalyzer.Types;
 
 public class FunctionCall extends Expression {
     private final Token name;
@@ -31,10 +31,10 @@ public class FunctionCall extends Expression {
     }
 
     @Override
-    public Type analyzeAndGetType(Map<String, FunctionDecl> funcMap,
-                                  Map<String, Type> varAndParamMap) throws SemanticAnalysisException {
-        Type returnType = analyzeCall(funcMap, varAndParamMap);
-        if (returnType == Type.VOID) {
+    public String analyzeAndGetType(Map<String, FunctionDecl> funcMap,
+                                    Map<String, String> varAndParamMap) throws SemanticAnalysisException {
+        String returnType = analyzeCall(funcMap, varAndParamMap);
+        if (Types.VOID.equals(returnType)) {
             throw new SemanticAnalysisException(
                     "Void function '" + name.getLexeme() + "' cannot be used in an expression",
                     name.getLine(), name.getCol());
@@ -42,8 +42,8 @@ public class FunctionCall extends Expression {
         return returnType;
     }
 
-    public Type analyzeCall(Map<String, FunctionDecl> funcMap,
-                            Map<String, Type> varAndParamMap) throws SemanticAnalysisException {
+    public String analyzeCall(Map<String, FunctionDecl> funcMap,
+                              Map<String, String> varAndParamMap) throws SemanticAnalysisException {
         String funcName = name.getLexeme();
         FunctionDecl decl = funcMap.get(funcName);
         if (decl == null) {
@@ -62,15 +62,15 @@ public class FunctionCall extends Expression {
 
         for (int i = 0; i < params.size(); i++) {
             VariableDecl paramDecl = params.get(i);
-            Type expected = Type.fromToken(paramDecl.getType());
-            if (expected == Type.VOID) {
+            String expected = Types.fromToken(paramDecl.getType());
+            if (Types.VOID.equals(expected)) {
                 throw new SemanticAnalysisException(
                         "Parameter '" + paramDecl.getName().getLexeme() + "' cannot be void",
                         paramDecl.getLine(), paramDecl.getColumn());
             }
 
-            Type actual = args.get(i).analyzeAndGetType(funcMap, varAndParamMap);
-            if (expected != actual) {
+            String actual = args.get(i).analyzeAndGetType(funcMap, varAndParamMap);
+            if (!expected.equals(actual)) {
                 throw new SemanticAnalysisException(
                         "Argument " + (i + 1) + " for function '" + funcName
                                 + "' expected type " + expected + " but found " + actual,
@@ -79,6 +79,6 @@ public class FunctionCall extends Expression {
         }
 
         Token returnToken = decl.getReturnType();
-        return Type.fromToken(returnToken);
+        return Types.fromToken(returnToken);
     }
 }

@@ -4,7 +4,6 @@ import java.util.Map;
 
 import splat.lexer.Token;
 import splat.semanticanalyzer.SemanticAnalysisException;
-import splat.semanticanalyzer.Type;
 
 public abstract class Statement extends ASTElement {
 
@@ -26,7 +25,7 @@ public abstract class Statement extends ASTElement {
      * Performs semantic analysis on the statement and its children.
      */
     public abstract void analyze(Map<String, FunctionDecl> funcMap,
-                                 Map<String, Type> varAndParamMap)
+                                 Map<String, String> varAndParamMap)
             throws SemanticAnalysisException;
 
     /**

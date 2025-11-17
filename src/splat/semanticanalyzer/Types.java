@@ -2,30 +2,26 @@ package splat.semanticanalyzer;
 
 import splat.lexer.Token;
 
-public enum Type {
-    INTEGER("Integer"),
-    BOOLEAN("Boolean"),
-    STRING("String"),
-    VOID("void");
+/**
+ * Simple utility holder for SPLAT type names.
+ */
+public final class Types {
+    public static final String INTEGER = "Integer";
+    public static final String BOOLEAN = "Boolean";
+    public static final String STRING = "String";
+    public static final String VOID = "void";
 
-    private final String displayName;
-
-    Type(String displayName) {
-        this.displayName = displayName;
+    private Types() {
     }
 
-    public String getDisplayName() {
-        return displayName;
-    }
-
-    public static Type fromToken(Token token) throws SemanticAnalysisException {
+    public static String fromToken(Token token) throws SemanticAnalysisException {
         if (token == null) {
-            return Type.VOID;
+            return VOID;
         }
         return fromLexeme(token.getLexeme(), token.getLine(), token.getCol());
     }
 
-    public static Type fromLexeme(String lexeme, int line, int column) throws SemanticAnalysisException {
+    public static String fromLexeme(String lexeme, int line, int column) throws SemanticAnalysisException {
         if (lexeme == null) {
             throw new SemanticAnalysisException("Unknown type", line, column);
         }

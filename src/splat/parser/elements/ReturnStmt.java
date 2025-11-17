@@ -4,7 +4,7 @@ import java.util.Map;
 
 import splat.lexer.Token;
 import splat.semanticanalyzer.SemanticAnalysisException;
-import splat.semanticanalyzer.Type;
+import splat.semanticanalyzer.Types;
 
 public class ReturnStmt extends Statement {
     private Expression expr;
@@ -29,8 +29,8 @@ public class ReturnStmt extends Statement {
 
     @Override
     public void analyze(Map<String, FunctionDecl> funcMap,
-                        Map<String, Type> varAndParamMap) throws SemanticAnalysisException {
-        Type expected = varAndParamMap.get(Statement.RETURN_TYPE_SLOT);
+                        Map<String, String> varAndParamMap) throws SemanticAnalysisException {
+        String expected = varAndParamMap.get(Statement.RETURN_TYPE_SLOT);
         if (expected == null) {
             throw new SemanticAnalysisException(
                     "Return statement not allowed outside of a function",
@@ -38,7 +38,7 @@ public class ReturnStmt extends Statement {
         }
 
         if (expr == null) {
-            if (expected != Type.VOID) {
+            if (!Types.VOID.equals(expected)) {
                 throw new SemanticAnalysisException(
                         "Return statement requires an expression of type " + expected,
                         getReturnToken().getLine(), getReturnToken().getCol());
@@ -46,13 +46,13 @@ public class ReturnStmt extends Statement {
             return;
         }
 
-        Type actual = expr.analyzeAndGetType(funcMap, varAndParamMap);
-        if (expected == Type.VOID) {
+        String actual = expr.analyzeAndGetType(funcMap, varAndParamMap);
+        if (Types.VOID.equals(expected)) {
             throw new SemanticAnalysisException(
                     "Void functions cannot return a value",
                     expr.getLine(), expr.getColumn());
         }
-        if (actual != expected) {
+        if (!actual.equals(expected)) {
             throw new SemanticAnalysisException(
                     "Return type mismatch: expected " + expected + " but found " + actual,
                     expr.getLine(), expr.getColumn());

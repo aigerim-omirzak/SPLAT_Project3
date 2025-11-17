@@ -5,7 +5,7 @@ import java.util.Map;
 
 import splat.lexer.Token;
 import splat.semanticanalyzer.SemanticAnalysisException;
-import splat.semanticanalyzer.Type;
+import splat.semanticanalyzer.Types;
 
 public class IfThenElse extends Statement {
     private Expression condition;
@@ -32,9 +32,9 @@ public class IfThenElse extends Statement {
 
     @Override
     public void analyze(Map<String, FunctionDecl> funcMap,
-                        Map<String, Type> varAndParamMap) throws SemanticAnalysisException {
-        Type condType = condition.analyzeAndGetType(funcMap, varAndParamMap);
-        if (condType != Type.BOOLEAN) {
+                        Map<String, String> varAndParamMap) throws SemanticAnalysisException {
+        String condType = condition.analyzeAndGetType(funcMap, varAndParamMap);
+        if (!Types.BOOLEAN.equals(condType)) {
             throw new SemanticAnalysisException(
                     "If condition must be Boolean",
                     condition.getLine(), condition.getColumn());

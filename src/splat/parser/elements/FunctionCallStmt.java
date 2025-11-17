@@ -4,7 +4,7 @@ import java.util.Map;
 
 import splat.lexer.Token;
 import splat.semanticanalyzer.SemanticAnalysisException;
-import splat.semanticanalyzer.Type;
+import splat.semanticanalyzer.Types;
 
 public class FunctionCallStmt extends Statement {
     private final FunctionCall call;
@@ -32,9 +32,9 @@ public class FunctionCallStmt extends Statement {
 
     @Override
     public void analyze(Map<String, FunctionDecl> funcMap,
-                        Map<String, Type> varAndParamMap) throws SemanticAnalysisException {
-        Type returnType = call.analyzeCall(funcMap, varAndParamMap);
-        if (returnType != Type.VOID) {
+                        Map<String, String> varAndParamMap) throws SemanticAnalysisException {
+        String returnType = call.analyzeCall(funcMap, varAndParamMap);
+        if (!Types.VOID.equals(returnType)) {
             Token start = call.getStartToken();
             throw new SemanticAnalysisException(
                     "Function '" + start.getLexeme() + "' returns " + returnType

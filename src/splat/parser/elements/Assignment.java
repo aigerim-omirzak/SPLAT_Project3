@@ -4,7 +4,6 @@ import java.util.Map;
 
 import splat.lexer.Token;
 import splat.semanticanalyzer.SemanticAnalysisException;
-import splat.semanticanalyzer.Type;
 
 public class Assignment extends Statement {
     private Token variable;   // должен быть Token
@@ -26,17 +25,17 @@ public class Assignment extends Statement {
 
     @Override
     public void analyze(Map<String, FunctionDecl> funcMap,
-                        Map<String, Type> varAndParamMap) throws SemanticAnalysisException {
+                        Map<String, String> varAndParamMap) throws SemanticAnalysisException {
         String name = variable.getLexeme();
-        Type targetType = varAndParamMap.get(name);
+        String targetType = varAndParamMap.get(name);
         if (targetType == null) {
             throw new SemanticAnalysisException(
                     "Variable '" + name + "' is not defined",
                     variable.getLine(), variable.getCol());
         }
 
-        Type exprType = expr.analyzeAndGetType(funcMap, varAndParamMap);
-        if (exprType != targetType) {
+        String exprType = expr.analyzeAndGetType(funcMap, varAndParamMap);
+        if (!exprType.equals(targetType)) {
             throw new SemanticAnalysisException(
                     "Type mismatch: cannot assign " + exprType + " to " + targetType,
                     variable.getLine(), variable.getCol());

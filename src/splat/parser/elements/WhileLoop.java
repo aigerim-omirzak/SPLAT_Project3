@@ -5,7 +5,7 @@ import java.util.Map;
 
 import splat.lexer.Token;
 import splat.semanticanalyzer.SemanticAnalysisException;
-import splat.semanticanalyzer.Type;
+import splat.semanticanalyzer.Types;
 
 public class WhileLoop extends Statement {
     private Expression condition;
@@ -28,9 +28,9 @@ public class WhileLoop extends Statement {
 
     @Override
     public void analyze(Map<String, FunctionDecl> funcMap,
-                        Map<String, Type> varAndParamMap) throws SemanticAnalysisException {
-        Type condType = condition.analyzeAndGetType(funcMap, varAndParamMap);
-        if (condType != Type.BOOLEAN) {
+                        Map<String, String> varAndParamMap) throws SemanticAnalysisException {
+        String condType = condition.analyzeAndGetType(funcMap, varAndParamMap);
+        if (!Types.BOOLEAN.equals(condType)) {
             throw new SemanticAnalysisException(
                     "While condition must be Boolean",
                     condition.getLine(), condition.getColumn());
