@@ -1,167 +1,222 @@
 Opening test directory...success
 Number of tests found: 102
 Running tests...
-Test Case 1: gk_05_badsemantics.splat...failed (exception was expected to be thrown during Phase 3)
-Test Case 2: 777_01_goodexecution.splat...failed (output does not match expected results)
+Test Case 1: 013_01_goodexecution.splat...failed (output does not match expected results)
 
-Test Case 3: gk_08_badsemantics.splat...failed (exception was expected to be thrown during Phase 3)
-Test Case 4: ye_05_goodexecution.splat...failed (output does not match expected results)
-
-Test Case 5: 024_00_goodexecution.splat...failed (output does not match expected results)
-
-Test Case 6: bt_01_badlex.splat...passed (proper SplatException thrown during Phase 1)
- >>> LexException: Unexpected character: ? Error at line 1, column 21
-Test Case 7: gk_01_goodexecution.splat...failed (output does not match expected results)
-
-Test Case 8: my_4_badsemantics.splat...failed (exception was expected to be thrown during Phase 3)
-Test Case 9: bt_01a_badparse.splat...failed (exception was expected to be thrown during Phase 2)
-Test Case 10: o_04_badsemantics.splat...failed (exception was expected to be thrown during Phase 3)
-Test Case 11: my_1_goodexecution.splat...failed (output does not match expected results)
-
-Test Case 12: kt_test06_badlex.splat...passed (proper SplatException thrown during Phase 1)
- >>> LexException: Unexpected character: \ Error at line 2, column 1
-Test Case 13: ye_02_goodexecution.splat...failed (output does not match expected results)
-
-Test Case 14: gk_06_badsemantics.splat...failed (exception was expected to be thrown during Phase 3)
-Test Case 15: bt_05_badsemantics.splat...failed (exception was expected to be thrown during Phase 3)
-Test Case 16: ye_03_goodexecution.splat...failed (output does not match expected results)
-
-Test Case 17: bt_00_badlex.splat...passed (proper SplatException thrown during Phase 1)
- >>> LexException: Unterminated string literal Error at line 3, column 37
-Test Case 18: 607_00_goodexecution.splat...failed (output does not match expected results)
-
-Test Case 19: bt_00a_badparse.splat...failed (exception was expected to be thrown during Phase 2)
-Test Case 20: 999_01_badsemantics.splat...failed (exception was expected to be thrown during Phase 3)
-Test Case 21: 054_01_goodexecution.splat...failed (output does not match expected results)
-
-Test Case 22: 999_03_goodexecution.splat...failed (output does not match expected results)
-
-Test Case 23: my_2c_badsemantics.splat...failed (exception was expected to be thrown during Phase 3)
-Test Case 24: 555_02_goodexecution.splat...failed (output does not match expected results)
-
-Test Case 25: o_02_badsemantics.splat...failed (exception was expected to be thrown during Phase 3)
-Test Case 26: bt_01_goodexecution.splat...failed (output does not match expected results)
-
-Test Case 27: 273_00_goodexecution.splat...failed (exception was thrown when execution should have been successful)
- >>> LexException: Unexpected character: % Error at line 8, column 12
-Test Case 28: bt_03_badsemantics.splat...failed (exception was expected to be thrown during Phase 3)
-Test Case 29: 555_00_goodexecution.splat...passed (output matches expected results)
-
-Test Case 30: 999_01_goodexecution.splat...failed (output does not match expected results)
-
-Test Case 31: 111_00_goodexecution.splat...failed (output does not match expected results)
-
-Test Case 32: my_1_badsemantics.splat...failed (exception was expected to be thrown during Phase 3)
-Test Case 33: 555_01_goodexecution.splat...failed (output does not match expected results)
-
-Test Case 34: 999_00_goodexecution.splat...failed (output does not match expected results)
-
-Test Case 35: my_2_badsemantics.splat...failed (exception was expected to be thrown during Phase 3)
-Test Case 36: AAA_01_goodexecution.splat...failed (output does not match expected results)
-
-Test Case 37: bt_05_goodexecution.splat...failed (output does not match expected results)
-
-Test Case 38: AAA_00_goodexecution.splat...failed (exception was thrown when execution should have been successful)
- >>> LexException: Unexpected character: % Error at line 17, column 10
-Test Case 39: 028_01_goodexecution.splat...failed (output does not match expected results)
-
-Test Case 40: bt_00_badsemantics.splat...failed (exception was expected to be thrown during Phase 3)
-Test Case 41: gk_03_badsemantics.splat...failed (exception was expected to be thrown during Phase 3)
-Test Case 42: 013_01_goodexecution.splat...failed (output does not match expected results)
-
-Test Case 43: 999_02_badsemantics.splat...failed (exception was expected to be thrown during Phase 3)
-Test Case 44: o_01_badsemantics.splat...failed (exception was expected to be thrown during Phase 3)
-Test Case 45: gk_01a_goodexecution.splat...failed (output does not match expected results)
-
-Test Case 46: bt_02_badparse.splat...failed (exception was expected to be thrown during Phase 2)
-Test Case 47: kt_test06_badparse.splat...failed (exception was expected to be thrown during Phase 2)
-Test Case 48: bt_02a_badparse.splat...failed (exception was expected to be thrown during Phase 2)
-Test Case 49: my_2_badparse.splat...failed (exception was expected to be thrown during Phase 2)
-Test Case 50: my_3_badsemantics.splat...failed (exception was expected to be thrown during Phase 3)
-Test Case 51: my_1a_badsemantics.splat...failed (exception was expected to be thrown during Phase 3)
-Test Case 52: o_06_goodexecution.splat...failed (output does not match expected results)
-
-Test Case 53: 131_01_goodexecution.splat...failed (output does not match expected results)
-
-Test Case 54: 999_03_badsemantics.splat...failed (exception was expected to be thrown during Phase 3)
-Test Case 55: bt_05_badparse.splat...failed (exception was expected to be thrown during Phase 2)
-Test Case 56: o_05_goodexecution.splat...failed (output does not match expected results)
-
-Test Case 57: my_2a_badsemantics.splat...failed (exception was expected to be thrown during Phase 3)
-Test Case 58: 654_01_goodexecution.splat...failed (exception was thrown when execution should have been successful)
- >>> LexException: Unexpected character: % Error at line 5, column 14
-Test Case 59: kt_test01_badparse.splat...failed (exception was expected to be thrown during Phase 2)
-Test Case 60: o_04_goodexecution.splat...passed (output matches expected results)
-
-Test Case 61: bt_01_badsemantics.splat...failed (exception was expected to be thrown during Phase 3)
-Test Case 62: gk_02_badsemantics.splat...failed (exception was expected to be thrown during Phase 3)
-Test Case 63: 087_03_goodexecution.splat...failed (output does not match expected results)
-
-Test Case 64: bt_02_badsemantics.splat...failed (exception was expected to be thrown during Phase 3)
-Test Case 65: gk_01_badsemantics.splat...failed (exception was expected to be thrown during Phase 3)
-Test Case 66: 315_01_goodexecution.splat...failed (output does not match expected results)
-
-Test Case 67: 999_00_badsemantics.splat...failed (exception was expected to be thrown during Phase 3)
-Test Case 68: o_03_badsemantics.splat...failed (exception was expected to be thrown during Phase 3)
-Test Case 69: my_2b_badsemantics.splat...failed (exception was expected to be thrown during Phase 3)
-Test Case 70: my_1b_badsemantics.splat...failed (exception was expected to be thrown during Phase 3)
-Test Case 71: bt_05a_badparse.splat...failed (exception was expected to be thrown during Phase 2)
-Test Case 72: 087_01_goodexecution.splat...failed (output does not match expected results)
-
-Test Case 73: 999_02_badparse.splat...failed (exception was expected to be thrown during Phase 2)
-Test Case 74: bt_03_badparse.splat...failed (exception was expected to be thrown during Phase 2)
-Test Case 75: 297_03_goodexecution.splat...failed (output does not match expected results)
-
-Test Case 76: 534_01_goodexecution.splat...failed (output does not match expected results)
-
-Test Case 77: my_1_badparse.splat...failed (exception was expected to be thrown during Phase 2)
-Test Case 78: kt_test05_badparse.splat...failed (exception was expected to be thrown during Phase 2)
-Test Case 79: 131_01_badexecution.splat...failed (exception was expected to be thrown during Phase 4)
-Test Case 80: bt_01_badparse.splat...failed (exception was expected to be thrown during Phase 2)
-Test Case 81: 003_03_goodexecution.splat...failed (output does not match expected results)
-
-Test Case 82: kt_test04_badlex.splat...passed (proper SplatException thrown during Phase 1)
- >>> LexException: Invalid char literal Error at line 3, column 2
-Test Case 83: kt_test03_badlex.splat...passed (proper SplatException thrown during Phase 1)
- >>> LexException: Unexpected character: ± Error at line 9, column 34
-Test Case 84: gk_07_badsemantics.splat...failed (exception was expected to be thrown during Phase 3)
-Test Case 85: kt_test05a_badparse.splat...failed (exception was expected to be thrown during Phase 2)
-Test Case 86: bt_04_badsemantics.splat...failed (exception was expected to be thrown during Phase 3)
-Test Case 87: my_2d_badsemantics.splat...failed (exception was expected to be thrown during Phase 3)
-Test Case 88: o_05_badsemantics.splat...failed (exception was expected to be thrown during Phase 3)
-Test Case 89: bt_05_badlex.splat...passed (proper SplatException thrown during Phase 1)
- >>> LexException: Unterminated string literal Error at line 2, column 11
-Test Case 90: kt_test02_badparse.splat...failed (exception was expected to be thrown during Phase 2)
-Test Case 91: kt_test03_badparse.splat...failed (exception was expected to be thrown during Phase 2)
-Test Case 92: o_06_badsemantics.splat...failed (exception was expected to be thrown during Phase 3)
-Test Case 93: gk_02_badparse.splat...failed (exception was expected to be thrown during Phase 2)
-Test Case 94: 930_03_goodexecution.splat...failed (output does not match expected results)
-
-Test Case 95: gk_04_badsemantics.splat...failed (exception was expected to be thrown during Phase 3)
-Test Case 96: bt_03a_badparse.splat...failed (exception was expected to be thrown during Phase 2)
- >>> LexException: Unexpected character sequence: <== Error at line 1, column 32
-Test Case 97: bt_03_badlex.splat...passed (proper SplatException thrown during Phase 1)
+Test Case 2: bt_03_badlex.splat...passed (proper SplatException thrown during Phase 1)
  >>> LexException: Unexpected character sequence: <== Error at line 1, column 22
-Test Case 98: kt_test04_badparse.splat...failed (exception was expected to be thrown during Phase 2)
-Test Case 99: 999_01_badparse.splat...failed (exception was expected to be thrown during Phase 2)
-Test Case 100: bt_00_badparse.splat...failed (exception was expected to be thrown during Phase 2)
-Test Case 101: kt_test02_badlex.splat...passed (proper SplatException thrown during Phase 1)
+Test Case 3: my_2a_badsemantics.splat...passed (proper SplatException thrown during Phase 3)
+ >>> SemanticAnalysisException: Return type mismatch: expected INTEGER but found STRING Error at line 9, column 10
+Test Case 4: o_01_badsemantics.splat...passed (proper SplatException thrown during Phase 3)
+ >>> SemanticAnalysisException: Unary '-' requires an integer operand Error at line 11, column 8
+Test Case 5: 607_00_goodexecution.splat...failed (output does not match expected results)
+
+Test Case 6: bt_04_badsemantics.splat...passed (proper SplatException thrown during Phase 3)
+ >>> SemanticAnalysisException: Variable 'a' is not defined Error at line 4, column 8
+Test Case 7: bt_02a_badparse.splat...passed (proper SplatException thrown during Phase 2)
+ >>> ParseException: Expected 'program' Error at line 1, column 1
+Test Case 8: kt_test02_badlex.splat...passed (proper SplatException thrown during Phase 1)
  >>> LexException: Unexpected character: ! Error at line 4, column 11
-Test Case 102: 007_02_goodexecution.splat...failed (output does not match expected results)
+Test Case 9: my_2b_badsemantics.splat...passed (proper SplatException thrown during Phase 3)
+ >>> SemanticAnalysisException: Unary '-' requires an integer operand Error at line 16, column 9
+Test Case 10: bt_00_badparse.splat...passed (proper SplatException thrown during Phase 2)
+ >>> ParseException: Expected 'program' Error at line 1, column 1
+Test Case 11: gk_01_goodexecution.splat...failed (output does not match expected results)
+
+Test Case 12: gk_04_badsemantics.splat...passed (proper SplatException thrown during Phase 3)
+ >>> SemanticAnalysisException: Duplicate declaration inside function: 'y' Error at line 4, column 2
+Test Case 13: o_04_goodexecution.splat...passed (output matches expected results)
+
+Test Case 14: bt_05_goodexecution.splat...failed (output does not match expected results)
+
+Test Case 15: my_1a_badsemantics.splat...passed (proper SplatException thrown during Phase 3)
+ >>> SemanticAnalysisException: Function 'whileloop' must return a value Error at line 5, column 2
+Test Case 16: gk_02_badparse.splat...passed (proper SplatException thrown during Phase 2)
+ >>> ParseException: Arithmetic expressions must be enclosed in parentheses Error at line 4, column 11
+Test Case 17: 315_01_goodexecution.splat...failed (output does not match expected results)
+
+Test Case 18: my_1b_badsemantics.splat...passed (proper SplatException thrown during Phase 3)
+ >>> SemanticAnalysisException: Variable 'looo' is not defined Error at line 13, column 2
+Test Case 19: kt_test05_badparse.splat...passed (proper SplatException thrown during Phase 2)
+ >>> ParseException: Expected 'program' Error at line 1, column 1
+Test Case 20: 999_00_goodexecution.splat...failed (output does not match expected results)
+
+Test Case 21: bt_02_badsemantics.splat...passed (proper SplatException thrown during Phase 3)
+ >>> SemanticAnalysisException: Return statement not allowed outside of a function Error at line 4, column 19
+Test Case 22: 777_01_goodexecution.splat...failed (output does not match expected results)
+
+Test Case 23: 028_01_goodexecution.splat...failed (output does not match expected results)
+
+Test Case 24: AAA_00_goodexecution.splat...failed (output does not match expected results)
+
+Test Case 25: 999_01_badsemantics.splat...passed (proper SplatException thrown during Phase 3)
+ >>> SemanticAnalysisException: Return statement requires an expression of type INTEGER Error at line 5, column 3
+Test Case 26: 999_02_badparse.splat...passed (proper SplatException thrown during Phase 2)
+ >>> ParseException: Expected 'begin' Error at line 4, column 3
+Test Case 27: my_2_badparse.splat...passed (proper SplatException thrown during Phase 2)
+ >>> ParseException: Unexpected token in statement: ( Error at line 13, column 3
+Test Case 28: bt_01_badparse.splat...passed (proper SplatException thrown during Phase 2)
+ >>> ParseException: Expected 'program' Error at line 1, column 1
+Test Case 29: bt_03_badparse.splat...passed (proper SplatException thrown during Phase 2)
+ >>> ParseException: Unexpected token in statement: ( Error at line 4, column 4
+Test Case 30: 111_00_goodexecution.splat...failed (output does not match expected results)
+
+Test Case 31: 555_01_goodexecution.splat...failed (output does not match expected results)
+
+Test Case 32: ye_02_goodexecution.splat...failed (output does not match expected results)
+
+Test Case 33: gk_03_badsemantics.splat...passed (proper SplatException thrown during Phase 3)
+ >>> SemanticAnalysisException: Variable 'y' is not defined Error at line 10, column 2
+Test Case 34: o_02_badsemantics.splat...passed (proper SplatException thrown during Phase 3)
+ >>> SemanticAnalysisException: Argument 1 for function 'donothing' expected type INTEGER but found BOOLEAN Error at line 13, column 15
+Test Case 35: bt_01_goodexecution.splat...failed (output does not match expected results)
+
+Test Case 36: 131_01_badexecution.splat...failed (exception was expected to be thrown during Phase 4)
+Test Case 37: kt_test05a_badparse.splat...passed (proper SplatException thrown during Phase 2)
+ >>> ParseException: Expected 'program' Error at line 1, column 1
+Test Case 38: bt_00_badlex.splat...passed (proper SplatException thrown during Phase 1)
+ >>> LexException: Unterminated string literal Error at line 3, column 37
+Test Case 39: bt_00_badsemantics.splat...passed (proper SplatException thrown during Phase 3)
+ >>> SemanticAnalysisException: Duplicate declaration inside function: 'x' Error at line 4, column 3
+Test Case 40: 024_00_goodexecution.splat...failed (output does not match expected results)
+
+Test Case 41: my_1_badparse.splat...passed (proper SplatException thrown during Phase 2)
+ >>> ParseException: print_line does not take an argument Error at line 13, column 13
+Test Case 42: 087_03_goodexecution.splat...failed (output does not match expected results)
+
+Test Case 43: bt_00a_badparse.splat...passed (proper SplatException thrown during Phase 2)
+ >>> ParseException: print string literals must not be parenthesized Error at line 12, column 9
+Test Case 44: 555_00_goodexecution.splat...passed (output matches expected results)
+
+Test Case 45: gk_08_badsemantics.splat...passed (proper SplatException thrown during Phase 3)
+ >>> SemanticAnalysisException: Variable 'l' is not defined Error at line 16, column 2
+Test Case 46: 007_02_goodexecution.splat...failed (output does not match expected results)
+
+Test Case 47: bt_03a_badparse.splat...passed (proper SplatException thrown during Phase 2)
+ >>> ParseException: Expected 'program' Error at line 1, column 1
+Test Case 48: 131_01_goodexecution.splat...failed (output does not match expected results)
+
+Test Case 49: bt_05_badparse.splat...passed (proper SplatException thrown during Phase 2)
+ >>> ParseException: Expected 'then' Error at line 6, column 7
+Test Case 50: 999_03_badsemantics.splat...passed (proper SplatException thrown during Phase 3)
+ >>> SemanticAnalysisException: Identifier 'fun' conflicts with an existing function name Error at line 3, column 12
+Test Case 51: o_04_badsemantics.splat...passed (proper SplatException thrown during Phase 3)
+ >>> SemanticAnalysisException: Operator '+' requires integer operands Error at line 13, column 15
+Test Case 52: bt_01_badlex.splat...passed (proper SplatException thrown during Phase 1)
+ >>> LexException: Unexpected character: { Error at line 1, column 1
+Test Case 53: AAA_01_goodexecution.splat...failed (output does not match expected results)
+
+Test Case 54: o_05_goodexecution.splat...failed (output does not match expected results)
+
+Test Case 55: bt_03_badsemantics.splat...passed (proper SplatException thrown during Phase 3)
+ >>> SemanticAnalysisException: Return type mismatch: expected BOOLEAN but found INTEGER Error at line 6, column 11
+Test Case 56: my_2d_badsemantics.splat...passed (proper SplatException thrown during Phase 3)
+ >>> SemanticAnalysisException: Operator '+' requires integer operands Error at line 11, column 17
+Test Case 57: kt_test06_badparse.splat...passed (proper SplatException thrown during Phase 2)
+ >>> ParseException: Expected 'begin' Error at line 1, column 9
+Test Case 58: 654_01_goodexecution.splat...failed (output does not match expected results)
+
+Test Case 59: 930_03_goodexecution.splat...failed (output does not match expected results)
+
+Test Case 60: kt_test03_badlex.splat...passed (proper SplatException thrown during Phase 1)
+ >>> LexException: Unexpected character: ± Error at line 9, column 34
+Test Case 61: 003_03_goodexecution.splat...failed (output does not match expected results)
+
+Test Case 62: 297_03_goodexecution.splat...failed (output does not match expected results)
+
+Test Case 63: gk_01_badsemantics.splat...passed (proper SplatException thrown during Phase 3)
+ >>> SemanticAnalysisException: Variable 'y' is not defined Error at line 5, column 4
+Test Case 64: kt_test04_badparse.splat...passed (proper SplatException thrown during Phase 2)
+ >>> ParseException: Expected 'program' Error at line 1, column 1
+Test Case 65: 273_00_goodexecution.splat...failed (output does not match expected results)
+
+Test Case 66: 999_03_goodexecution.splat...failed (output does not match expected results)
+
+Test Case 67: o_05_badsemantics.splat...passed (proper SplatException thrown during Phase 3)
+ >>> SemanticAnalysisException: While condition must be Boolean Error at line 11, column 8
+Test Case 68: 054_01_goodexecution.splat...failed (output does not match expected results)
+
+Test Case 69: o_06_badsemantics.splat...passed (proper SplatException thrown during Phase 3)
+ >>> SemanticAnalysisException: Variable 'x' is not defined Error at line 11, column 6
+Test Case 70: gk_01a_goodexecution.splat...failed (output does not match expected results)
+
+Test Case 71: bt_05a_badparse.splat...passed (proper SplatException thrown during Phase 2)
+ >>> ParseException: Expected 'program' Error at line 1, column 1
+Test Case 72: ye_05_goodexecution.splat...failed (output does not match expected results)
+
+Test Case 73: 999_01_goodexecution.splat...failed (output does not match expected results)
+
+Test Case 74: gk_02_badsemantics.splat...passed (proper SplatException thrown during Phase 3)
+ >>> SemanticAnalysisException: Variable 'bad' is not defined Error at line 4, column 12
+Test Case 75: 555_02_goodexecution.splat...failed (output does not match expected results)
+
+Test Case 76: kt_test06_badlex.splat...passed (proper SplatException thrown during Phase 1)
+ >>> LexException: Unexpected character: \ Error at line 2, column 1
+Test Case 77: ye_03_goodexecution.splat...failed (output does not match expected results)
+
+Test Case 78: 999_01_badparse.splat...passed (proper SplatException thrown during Phase 2)
+ >>> ParseException: Arithmetic expressions must be enclosed in parentheses Error at line 3, column 7
+Test Case 79: bt_05_badlex.splat...passed (proper SplatException thrown during Phase 1)
+ >>> LexException: Unterminated string literal Error at line 2, column 11
+Test Case 80: kt_test03_badparse.splat...passed (proper SplatException thrown during Phase 2)
+ >>> ParseException: Expected 'program' Error at line 1, column 1
+Test Case 81: o_06_goodexecution.splat...failed (output does not match expected results)
+
+Test Case 82: gk_06_badsemantics.splat...passed (proper SplatException thrown during Phase 3)
+ >>> SemanticAnalysisException: Duplicate declaration inside function: 'x' Error at line 4, column 2
+Test Case 83: 534_01_goodexecution.splat...failed (output does not match expected results)
+
+Test Case 84: kt_test01_badparse.splat...passed (proper SplatException thrown during Phase 2)
+ >>> ParseException: Expected 'program' Error at line 1, column 1
+Test Case 85: my_2c_badsemantics.splat...passed (proper SplatException thrown during Phase 3)
+ >>> SemanticAnalysisException: Type mismatch: cannot assign BOOLEAN to STRING Error at line 11, column 3
+Test Case 86: my_1_badsemantics.splat...passed (proper SplatException thrown during Phase 3)
+ >>> SemanticAnalysisException: Function 'whileloop' must return a value Error at line 3, column 2
+Test Case 87: 999_02_badsemantics.splat...passed (proper SplatException thrown during Phase 3)
+ >>> SemanticAnalysisException: Duplicate declaration inside function: 'x' Error at line 4, column 3
+Test Case 88: gk_05_badsemantics.splat...passed (proper SplatException thrown during Phase 3)
+ >>> SemanticAnalysisException: Variable 'y' is not defined Error at line 11, column 3
+Test Case 89: kt_test04_badlex.splat...passed (proper SplatException thrown during Phase 1)
+ >>> LexException: Invalid char literal Error at line 3, column 2
+Test Case 90: kt_test02_badparse.splat...passed (proper SplatException thrown during Phase 2)
+ >>> ParseException: Unexpected token after identifier 'helloworld' Error at line 2, column 1
+Test Case 91: 999_00_badsemantics.splat...passed (proper SplatException thrown during Phase 3)
+ >>> SemanticAnalysisException: Void functions cannot return a value Error at line 5, column 10
+Test Case 92: o_03_badsemantics.splat...passed (proper SplatException thrown during Phase 3)
+ >>> SemanticAnalysisException: Void functions cannot return a value Error at line 11, column 17
+Test Case 93: my_2_badsemantics.splat...passed (proper SplatException thrown during Phase 3)
+ >>> SemanticAnalysisException: Return type mismatch: expected INTEGER but found STRING Error at line 7, column 10
+Test Case 94: 087_01_goodexecution.splat...failed (output does not match expected results)
+
+Test Case 95: my_4_badsemantics.splat...passed (proper SplatException thrown during Phase 3)
+ >>> SemanticAnalysisException: Function 'Lasagna' is not defined Error at line 9, column 2
+Test Case 96: bt_01a_badparse.splat...passed (proper SplatException thrown during Phase 2)
+ >>> ParseException: Unexpected token in statement: ( Error at line 8, column 2
+Test Case 97: my_3_badsemantics.splat...passed (proper SplatException thrown during Phase 3)
+ >>> SemanticAnalysisException: Function 'Lasagna' is not defined Error at line 9, column 2
+Test Case 98: bt_02_badparse.splat...passed (proper SplatException thrown during Phase 2)
+ >>> ParseException: Unexpected token in statement: names Error at line 5, column 2
+Test Case 99: gk_07_badsemantics.splat...passed (proper SplatException thrown during Phase 3)
+ >>> SemanticAnalysisException: Function 'donothing3' is not defined Error at line 16, column 7
+Test Case 100: bt_05_badsemantics.splat...passed (proper SplatException thrown during Phase 3)
+ >>> SemanticAnalysisException: Function 'some_function_name' is not defined Error at line 4, column 2
+Test Case 101: bt_01_badsemantics.splat...passed (proper SplatException thrown during Phase 3)
+ >>> SemanticAnalysisException: Type mismatch: cannot assign BOOLEAN to INTEGER Error at line 13, column 2
+Test Case 102: my_1_goodexecution.splat...failed (output does not match expected results)
 
 ---------------------------
 FINAL SPLAT TESTING RESULTS
 ---------------------------
 Total tests cases:   102
 Test cases run:      102
-Test cases passed:   10 (9,8 %)
+Test cases passed:   66 (64.7 %)
 Results by case
-  Lex Exception:       8 / 8 (100,0 %)
-    false throws: 4
-  Parse Exception:     0 / 22 (0,0 %)
+  Lex Exception:       8 / 8 (100.0 %)
     false throws: 0
-  Semantic Exception:  0 / 34 (0,0 %)
+  Parse Exception:     22 / 22 (100.0 %)
     false throws: 0
-  Execution Exception: 0 / 1 (0,0 %)
+  Semantic Exception:  34 / 34 (100.0 %)
     false throws: 0
-  Execution Success:   2 / 37 (5,4 %)
+  Execution Exception: 0 / 1 (0.0 %)
+    false throws: 0
+  Execution Success:   2 / 37 (5.4 %)
