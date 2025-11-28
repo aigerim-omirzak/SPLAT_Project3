@@ -9,10 +9,10 @@ import splat.semanticanalyzer.SemanticAnalysisException;
 import splat.semanticanalyzer.Type;
 
 public class ExpressionStmt extends Statement {
-    private Expression expr;
+    private final Expression expr;
 
     public ExpressionStmt(Expression expr) {
-        super(expr.getToken());
+        super(expr.getStartToken());
         this.expr = expr;
     }
 
