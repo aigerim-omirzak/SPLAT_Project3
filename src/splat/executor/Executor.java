@@ -44,7 +44,7 @@ public class Executor {
 
         for (Declaration decl : progAST.getDecls()) {
 
-            String label = decl.getLabel().toString();
+            String label = decl.getLabelLexeme();
 
             if (decl instanceof FunctionDecl) {
                 FunctionDecl funcDecl = (FunctionDecl)decl;
@@ -84,13 +84,13 @@ public class Executor {
         for (int i = 0; i < params.size(); i++) {
             VariableDecl param = params.get(i);
             Value argVal = call.getArgs().get(i).evaluate(funcMap, callerVarMap);
-            newVarMap.put(param.getLabel().toString(), argVal);
+            newVarMap.put(param.getLabelLexeme(), argVal);
         }
 
         for (VariableDecl local : decl.getLocalVars()) {
             try {
                 Type type = Type.fromToken(local.getType());
-                newVarMap.put(local.getLabel().toString(), Value.defaultFor(type));
+                newVarMap.put(local.getLabelLexeme(), Value.defaultFor(type));
             } catch (SemanticAnalysisException sae) {
                 throw new ExecutionException(sae.getMessage(), local.getLine(), local.getColumn());
             }

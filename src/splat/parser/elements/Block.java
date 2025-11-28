@@ -37,20 +37,4 @@ public class Block extends Statement {
             stmt.execute(funcMap, varAndParamMap);
         }
     }
-
-    @Override
-    public void analyze(Map<String, FunctionDecl> funcMap, Map<String, Type> varAndParamMap)
-            throws SemanticAnalysisException {
-        for (Statement stmt : statements) {
-            stmt.analyze(funcMap, varAndParamMap);
-        }
-    }
-
-    @Override
-    public void execute(Map<String, FunctionDecl> funcMap, Map<String, Value> varAndParamMap)
-            throws ReturnFromCall, ExecutionException {
-        for (Statement stmt : statements) {
-            stmt.execute(funcMap, varAndParamMap);
-        }
-    }
 }

@@ -33,18 +33,6 @@ public class FunctionCallStmt extends Statement {
         call.evaluate(funcMap, varAndParamMap);
     }
 
-    @Override
-    public void analyze(Map<String, FunctionDecl> funcMap, Map<String, Type> varAndParamMap)
-            throws SemanticAnalysisException {
-        call.analyzeAndGetType(funcMap, varAndParamMap);
-    }
-
-    @Override
-    public void execute(Map<String, FunctionDecl> funcMap, Map<String, Value> varAndParamMap)
-            throws ReturnFromCall, ExecutionException {
-        call.evaluate(funcMap, varAndParamMap);
-    }
-
 
     @Override
     public String toString() {
