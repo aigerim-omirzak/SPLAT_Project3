@@ -2,45 +2,80 @@ package splat.executor;
 
 import splat.semanticanalyzer.Type;
 
-public abstract class Value {
+public class Value {
+    private final Type type;
+    private final Object payload;
 
-    public abstract Type getType();
+    public Value(Type type, Object payload) {
+        this.type = type;
+        this.payload = payload;
+    }
+
+    public Type getType() {
+        return type;
+    }
 
     public boolean isInteger() {
-        return getType() == Type.INTEGER;
+        return type == Type.INTEGER;
     }
 
     public boolean isBoolean() {
-        return getType() == Type.BOOLEAN;
+        return type == Type.BOOLEAN;
     }
 
     public boolean isString() {
-        return getType() == Type.STRING;
+        return type == Type.STRING;
     }
 
     public int asInteger() {
-        throw new IllegalStateException("Not an integer value");
+        ensureType(Type.INTEGER, "Not an integer value");
+        return (Integer) payload;
     }
 
     public boolean asBoolean() {
-        throw new IllegalStateException("Not a boolean value");
+        ensureType(Type.BOOLEAN, "Not a boolean value");
+        return (Boolean) payload;
     }
 
     public String asString() {
-        throw new IllegalStateException("Not a string value");
+        ensureType(Type.STRING, "Not a string value");
+        return (String) payload;
     }
 
     public static Value defaultValue(Type type) {
         switch (type) {
             case INTEGER:
-                return new IntegerValue(0);
+                return new Value(Type.INTEGER, 0);
             case BOOLEAN:
-                return new BooleanValue(false);
+                return new Value(Type.BOOLEAN, false);
             case STRING:
-                return new StringValue("");
+                return new Value(Type.STRING, "");
             case VOID:
             default:
                 return null;
+        }
+    }
+
+    public static Value ofInteger(int value) {
+        return new Value(Type.INTEGER, value);
+    }
+
+    public static Value ofBoolean(boolean value) {
+        return new Value(Type.BOOLEAN, value);
+    }
+
+    public static Value ofString(String value) {
+        return new Value(Type.STRING, value);
+    }
+
+    @Override
+    public String toString() {
+        return String.valueOf(payload);
+    }
+
+    private void ensureType(Type expected, String message) {
+        if (type != expected) {
+            throw new IllegalStateException(message);
         }
     }
 }

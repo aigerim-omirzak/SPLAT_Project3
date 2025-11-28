@@ -16,7 +16,9 @@ public class VariableRef extends Expression {
         this.name = name;
     }
 
-    public Token getName() { return name; }
+    public Token getName() {
+        return name;
+    }
 
     @Override
     public String toString() {
@@ -39,9 +41,13 @@ public class VariableRef extends Expression {
     @Override
     public Value evaluate(Map<String, FunctionDecl> funcMap,
                           Map<String, Value> varAndParamMap) throws ExecutionException {
-        Value value = varAndParamMap.get(name.getLexeme());
+        String lexeme = name.getLexeme();
+        Value value = varAndParamMap.get(lexeme);
         if (value == null) {
-            throw new ExecutionException("Variable '" + name.getLexeme() + "' has no value", name.getLine(), name.getCol());
+            throw new ExecutionException(
+                    "Variable '" + lexeme + "' has no value",
+                    name.getLine(),
+                    name.getCol());
         }
         return value;
     }

@@ -10,16 +10,14 @@ import splat.semanticanalyzer.SemanticAnalysisException;
 import splat.semanticanalyzer.Type;
 
 public class ReturnStmt extends Statement {
-    private Expression expr;
+    private final Expression expr;
 
     public ReturnStmt(Token tok, Expression expr) {
         super(tok);
         this.expr = expr;
     }
 
-    public Expression getExpr() {
-        return expr;
-    }
+    public Expression getExpr() { return expr; }
 
     public Token getReturnToken() {
         return super.getToken();
@@ -34,18 +32,10 @@ public class ReturnStmt extends Statement {
     public void analyze(Map<String, FunctionDecl> funcMap,
                         Map<String, Type> varAndParamMap) throws SemanticAnalysisException {
         Type expected = varAndParamMap.get(Statement.RETURN_TYPE_SLOT);
-        if (expected == null) {
-            throw new SemanticAnalysisException(
-                    "Return statement not allowed outside of a function",
-                    getReturnToken().getLine(), getReturnToken().getCol());
-        }
+        ensureInsideFunction(expected);
 
         if (expr == null) {
-            if (expected != Type.VOID) {
-                throw new SemanticAnalysisException(
-                        "Return statement requires an expression of type " + expected,
-                        getReturnToken().getLine(), getReturnToken().getCol());
-            }
+            ensureVoidReturn(expected);
             return;
         }
 
@@ -70,5 +60,21 @@ public class ReturnStmt extends Statement {
         }
         Value value = expr.evaluate(funcMap, varAndParamMap);
         throw new ReturnFromCall(value);
+    }
+
+    private void ensureInsideFunction(Type expected) throws SemanticAnalysisException {
+        if (expected == null) {
+            throw new SemanticAnalysisException(
+                    "Return statement not allowed outside of a function",
+                    getReturnToken().getLine(), getReturnToken().getCol());
+        }
+    }
+
+    private void ensureVoidReturn(Type expected) throws SemanticAnalysisException {
+        if (expected != Type.VOID) {
+            throw new SemanticAnalysisException(
+                    "Return statement requires an expression of type " + expected,
+                    getReturnToken().getLine(), getReturnToken().getCol());
+        }
     }
 }
