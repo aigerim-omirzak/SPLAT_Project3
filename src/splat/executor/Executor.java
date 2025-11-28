@@ -37,7 +37,7 @@ public class Executor {
         }
     }
 
-    private void setMaps() {
+    private void setMaps() throws ExecutionException {
 
         funcMap = new HashMap<>();
         progVarMap = new HashMap<>();
@@ -56,8 +56,7 @@ public class Executor {
                     Type type = Type.fromToken(varDecl.getType());
                     progVarMap.put(label, Value.defaultFor(type));
                 } catch (SemanticAnalysisException sae) {
-                    // Should have been caught earlier during analysis
-                    throw new RuntimeException(sae);
+                    throw new ExecutionException(sae.getMessage(), varDecl.getLine(), varDecl.getColumn());
                 }
             }
         }
