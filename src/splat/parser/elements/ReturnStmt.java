@@ -2,6 +2,9 @@ package splat.parser.elements;
 
 import java.util.Map;
 
+import splat.executor.ExecutionException;
+import splat.executor.ReturnFromCall;
+import splat.executor.Value;
 import splat.lexer.Token;
 import splat.semanticanalyzer.SemanticAnalysisException;
 import splat.semanticanalyzer.Type;
@@ -57,5 +60,15 @@ public class ReturnStmt extends Statement {
                     "Return type mismatch: expected " + expected + " but found " + actual,
                     expr.getLine(), expr.getColumn());
         }
+    }
+
+    @Override
+    public void execute(Map<String, FunctionDecl> funcMap,
+                        Map<String, Value> varAndParamMap) throws ReturnFromCall, ExecutionException {
+        if (expr == null) {
+            throw new ReturnFromCall(null);
+        }
+        Value value = expr.evaluate(funcMap, varAndParamMap);
+        throw new ReturnFromCall(value);
     }
 }

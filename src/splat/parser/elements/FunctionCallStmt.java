@@ -2,6 +2,8 @@ package splat.parser.elements;
 
 import java.util.Map;
 
+import splat.executor.ExecutionException;
+import splat.executor.Value;
 import splat.lexer.Token;
 import splat.semanticanalyzer.SemanticAnalysisException;
 import splat.semanticanalyzer.Type;
@@ -36,5 +38,11 @@ public class FunctionCallStmt extends Statement {
                             + " and cannot be used as a statement",
                     start.getLine(), start.getCol());
         }
+    }
+
+    @Override
+    public void execute(Map<String, FunctionDecl> funcMap,
+                        Map<String, Value> varAndParamMap) throws ExecutionException {
+        call.evaluate(funcMap, varAndParamMap);
     }
 }

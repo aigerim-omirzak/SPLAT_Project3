@@ -2,6 +2,10 @@ package splat.parser.elements;
 
 import java.util.Map;
 
+import splat.executor.ExecutionException;
+import splat.executor.BooleanValue;
+import splat.executor.IntegerValue;
+import splat.executor.Value;
 import splat.lexer.Token;
 import splat.semanticanalyzer.SemanticAnalysisException;
 import splat.semanticanalyzer.Type;
@@ -80,6 +84,67 @@ public class BinaryOp extends Expression {
             throw new SemanticAnalysisException(
                     "Equality operator requires operands of the same non-void type",
                     op.getLine(), op.getCol());
+        }
+    }
+
+    @Override
+    public Value evaluate(Map<String, FunctionDecl> funcMap,
+                          Map<String, Value> varAndParamMap) throws ExecutionException {
+        Value leftVal = left.evaluate(funcMap, varAndParamMap);
+        Value rightVal = right.evaluate(funcMap, varAndParamMap);
+        String opLexeme = op.getLexeme();
+
+        switch (opLexeme) {
+            case "+":
+                return new IntegerValue(leftVal.asInteger() + rightVal.asInteger());
+            case "-":
+                return new IntegerValue(leftVal.asInteger() - rightVal.asInteger());
+            case "*":
+                return new IntegerValue(leftVal.asInteger() * rightVal.asInteger());
+            case "/":
+                if (rightVal.asInteger() == 0) {
+                    throw new ExecutionException("Division by zero", op.getLine(), op.getCol());
+                }
+                return new IntegerValue(leftVal.asInteger() / rightVal.asInteger());
+            case "%":
+                if (rightVal.asInteger() == 0) {
+                    throw new ExecutionException("Division by zero", op.getLine(), op.getCol());
+                }
+                return new IntegerValue(leftVal.asInteger() % rightVal.asInteger());
+            case "and":
+                return new BooleanValue(leftVal.asBoolean() && rightVal.asBoolean());
+            case "or":
+                return new BooleanValue(leftVal.asBoolean() || rightVal.asBoolean());
+            case "<":
+                return new BooleanValue(leftVal.asInteger() < rightVal.asInteger());
+            case "<=":
+                return new BooleanValue(leftVal.asInteger() <= rightVal.asInteger());
+            case ">":
+                return new BooleanValue(leftVal.asInteger() > rightVal.asInteger());
+            case ">=":
+                return new BooleanValue(leftVal.asInteger() >= rightVal.asInteger());
+            case "==":
+                return new BooleanValue(equalsValues(leftVal, rightVal));
+            case "!=":
+                return new BooleanValue(!equalsValues(leftVal, rightVal));
+            default:
+                throw new ExecutionException("Unknown operator '" + opLexeme + "'", op.getLine(), op.getCol());
+        }
+    }
+
+    private boolean equalsValues(Value leftVal, Value rightVal) {
+        if (leftVal.getType() != rightVal.getType()) {
+            return false;
+        }
+        switch (leftVal.getType()) {
+            case INTEGER:
+                return leftVal.asInteger() == rightVal.asInteger();
+            case BOOLEAN:
+                return leftVal.asBoolean() == rightVal.asBoolean();
+            case STRING:
+                return leftVal.asString().equals(rightVal.asString());
+            default:
+                return false;
         }
     }
 }

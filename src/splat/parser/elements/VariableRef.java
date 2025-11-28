@@ -2,6 +2,8 @@ package splat.parser.elements;
 
 import java.util.Map;
 
+import splat.executor.ExecutionException;
+import splat.executor.Value;
 import splat.lexer.Token;
 import splat.semanticanalyzer.SemanticAnalysisException;
 import splat.semanticanalyzer.Type;
@@ -32,5 +34,15 @@ public class VariableRef extends Expression {
                     name.getLine(), name.getCol());
         }
         return type;
+    }
+
+    @Override
+    public Value evaluate(Map<String, FunctionDecl> funcMap,
+                          Map<String, Value> varAndParamMap) throws ExecutionException {
+        Value value = varAndParamMap.get(name.getLexeme());
+        if (value == null) {
+            throw new ExecutionException("Variable '" + name.getLexeme() + "' has no value", name.getLine(), name.getCol());
+        }
+        return value;
     }
 }

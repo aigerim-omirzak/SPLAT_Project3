@@ -2,6 +2,8 @@ package splat.parser.elements;
 
 import java.util.Map;
 
+import splat.executor.ExecutionException;
+import splat.executor.Value;
 import splat.lexer.Token;
 import splat.semanticanalyzer.SemanticAnalysisException;
 import splat.semanticanalyzer.Type;
@@ -41,5 +43,16 @@ public class Assignment extends Statement {
                     "Type mismatch: cannot assign " + exprType + " to " + targetType,
                     variable.getLine(), variable.getCol());
         }
+    }
+
+    @Override
+    public void execute(Map<String, FunctionDecl> funcMap,
+                        Map<String, Value> varAndParamMap) throws ExecutionException {
+        Value value = expr.evaluate(funcMap, varAndParamMap);
+        if (!varAndParamMap.containsKey(variable.getLexeme())) {
+            throw new ExecutionException("Variable '" + variable.getLexeme() + "' is not defined",
+                    variable.getLine(), variable.getCol());
+        }
+        varAndParamMap.put(variable.getLexeme(), value);
     }
 }

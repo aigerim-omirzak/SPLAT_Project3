@@ -2,6 +2,10 @@ package splat.parser.elements;
 
 import java.util.Map;
 
+import splat.executor.ExecutionException;
+import splat.executor.BooleanValue;
+import splat.executor.IntegerValue;
+import splat.executor.Value;
 import splat.lexer.Token;
 import splat.semanticanalyzer.SemanticAnalysisException;
 import splat.semanticanalyzer.Type;
@@ -56,5 +60,19 @@ public class UnaryOp extends Expression {
         throw new SemanticAnalysisException(
                 "Unknown unary operator '" + opLexeme + "'",
                 op.getLine(), op.getCol());
+    }
+
+    @Override
+    public Value evaluate(Map<String, FunctionDecl> funcMap,
+                          Map<String, Value> varAndParamMap) throws ExecutionException {
+        Value child = expr.evaluate(funcMap, varAndParamMap);
+        String opLexeme = op.getLexeme();
+        if ("-".equals(opLexeme)) {
+            return new IntegerValue(-child.asInteger());
+        }
+        if ("not".equals(opLexeme)) {
+            return new BooleanValue(!child.asBoolean());
+        }
+        throw new ExecutionException("Unknown unary operator '" + opLexeme + "'", op.getLine(), op.getCol());
     }
 }

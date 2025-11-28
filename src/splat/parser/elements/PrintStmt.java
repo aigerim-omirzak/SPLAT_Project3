@@ -2,6 +2,8 @@ package splat.parser.elements;
 
 import java.util.Map;
 
+import splat.executor.ExecutionException;
+import splat.executor.Value;
 import splat.lexer.Token;
 import splat.semanticanalyzer.SemanticAnalysisException;
 import splat.semanticanalyzer.Type;
@@ -58,5 +60,21 @@ public class PrintStmt extends Statement {
 
     private boolean isPrintable(Type type) {
         return type == Type.INTEGER || type == Type.STRING || type == Type.BOOLEAN;
+    }
+
+    @Override
+    public void execute(Map<String, FunctionDecl> funcMap,
+                        Map<String, Value> varAndParamMap) throws ExecutionException {
+        boolean isPrintLine = "print_line".equals(getStartToken().getLexeme());
+        if (expr != null) {
+            Value value = expr.evaluate(funcMap, varAndParamMap);
+            if (isPrintLine) {
+                System.out.println(value.toString());
+            } else {
+                System.out.print(value.toString());
+            }
+        } else {
+            System.out.println();
+        }
     }
 }

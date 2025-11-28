@@ -1,10 +1,12 @@
 package splat.parser.elements;
 
-import splat.lexer.Token;
 import java.util.List;
 
 import java.util.Map;
 
+import splat.executor.ExecutionException;
+import splat.executor.ReturnFromCall;
+import splat.executor.Value;
 import splat.lexer.Token;
 import splat.semanticanalyzer.SemanticAnalysisException;
 import splat.semanticanalyzer.Type;
@@ -47,6 +49,24 @@ public class IfThenElse extends Statement {
         }
         for (Statement stmt : elseStmts) {
             stmt.analyze(funcMap, varAndParamMap);
+        }
+    }
+
+    @Override
+    public void execute(Map<String, FunctionDecl> funcMap,
+                        Map<String, Value> varAndParamMap) throws ReturnFromCall, ExecutionException {
+        Value condVal = condition.evaluate(funcMap, varAndParamMap);
+        if (!condVal.isBoolean()) {
+            throw new ExecutionException("If condition must be Boolean", condition.getLine(), condition.getColumn());
+        }
+        if (condVal.asBoolean()) {
+            for (Statement stmt : thenStmts) {
+                stmt.execute(funcMap, varAndParamMap);
+            }
+        } else {
+            for (Statement stmt : elseStmts) {
+                stmt.execute(funcMap, varAndParamMap);
+            }
         }
     }
 }
