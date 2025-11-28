@@ -19,6 +19,7 @@ public class BooleanValue extends Value {
         return value;
     }
 
+
     @Override
     public String toString() {
         return Boolean.toString(value);
