@@ -1,6 +1,5 @@
 package splat.parser.elements;
 
-import splat.lexer.Token;
 import java.util.List;
 import java.util.Map;
 
