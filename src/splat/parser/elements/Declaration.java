@@ -7,4 +7,8 @@ public abstract class Declaration extends ASTElement {
     public Declaration(Token tok) {
         super(tok);
     }
+
+    public Token getLabel() {
+        return getToken();
+    }
 }
