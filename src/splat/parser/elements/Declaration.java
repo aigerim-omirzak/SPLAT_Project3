@@ -2,6 +2,7 @@ package splat.parser.elements;
 
 import splat.lexer.Token;
 
+
 public abstract class Declaration extends ASTElement {
 
     private final Token label;

@@ -2,6 +2,7 @@ package splat.semanticanalyzer;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -17,218 +18,170 @@ import splat.parser.elements.WhileLoop;
 
 public class SemanticAnalyzer {
 
-        private ProgramAST progAST;
+    private final ProgramAST program;
+    private final Map<String, FunctionDecl> functionByName;
+    private final Map<String, Type> globalVariableTypes;
 
-        private Map<String, FunctionDecl> funcMap;
-        private Map<String, Type> progVarMap;
-	
-	public SemanticAnalyzer(ProgramAST progAST) {
-		this.progAST = progAST;
-	}
+    public SemanticAnalyzer(ProgramAST program) {
+        this.program = program;
+        this.functionByName = new HashMap<>();
+        this.globalVariableTypes = new HashMap<>();
+    }
 
-        public void analyze() throws SemanticAnalysisException {
+    public void analyze() throws SemanticAnalysisException {
+        collectGlobalDeclarations();
+        analyzeFunctions();
+        analyzeProgramBody();
+    }
 
-                // Checks to make sure we don't use the same labels more than once
-                // for our program functions and variables
-                checkNoDuplicateProgLabels();
-		
-                // This sets the maps that will be needed later when we need to
-                // typecheck variable references and function calls in the
-                // program body
-                setProgVarAndFuncMaps();
-		
-		// Perform semantic analysis on the functions
-		for (FunctionDecl funcDecl : funcMap.values()) {	
-			analyzeFuncDecl(funcDecl);
+    private void collectGlobalDeclarations() throws SemanticAnalysisException {
+        Set<String> declaredLabels = new HashSet<>();
+        for (Declaration decl : program.getDecls()) {
+            String label = decl.getLabelLexeme();
+            ensureUniqueGlobalLabel(declaredLabels, decl, label);
+            registerGlobalDeclaration(decl, label);
         }
-		
-                // Perform semantic analysis on the program body
-                for (Statement stmt : progAST.getStmts()) {
-                        if (containsReturn(stmt)) {
-                                throw new SemanticAnalysisException("Return cannot be used outside of a function",
-                                                stmt.getLine(), stmt.getColumn());
-                        }
-                        stmt.analyze(funcMap, progVarMap);
-                }
+    }
 
+    private void analyzeFunctions() throws SemanticAnalysisException {
+        for (FunctionDecl functionDecl : functionByName.values()) {
+            analyzeFunction(functionDecl);
         }
+    }
 
-        private void analyzeFuncDecl(FunctionDecl funcDecl) throws SemanticAnalysisException {
+    private void analyzeFunction(FunctionDecl functionDecl) throws SemanticAnalysisException {
+        Map<String, Type> typeEnvironment = new HashMap<>();
+        Set<String> namesInFunction = new HashSet<>();
 
-                // Checks to make sure we don't use the same labels more than once
-                // among our function parameters, local variables, and function names
-                checkNoDuplicateFuncLabels(funcDecl);
+        populateVariableTypes(functionDecl.getParams(), "Parameters cannot be declared with type void",
+                typeEnvironment, namesInFunction);
+        populateVariableTypes(functionDecl.getLocalVars(), "Local variables cannot be declared with type void",
+                typeEnvironment, namesInFunction);
 
-                for (VariableDecl param : funcDecl.getParams()) {
-                        String label = param.getLabelLexeme();
-                        if (funcMap.containsKey(label) && funcMap.get(label) != funcDecl) {
-                                throw new SemanticAnalysisException("Duplicate label '" + label + "' in function",
-                                                param.getLine(), param.getColumn());
-                        }
-                }
+        Type returnType = Type.fromToken(functionDecl.getReturnType());
+        typeEnvironment.put(Statement.RETURN_TYPE_SLOT, returnType);
 
-                // Get the types of the parameters and local variables
-                Map<String, Type> varAndParamMap = getVarAndParamMap(funcDecl);
-
-                // Perform semantic analysis on the function body
-                for (Statement stmt : funcDecl.getStmts()) {
-                        stmt.analyze(funcMap, varAndParamMap);
-                }
-
-                // Ensure non-void functions eventually return a value
-                Type returnType = Type.fromToken(funcDecl.getReturnType());
-                if (returnType != Type.VOID && !containsReturn(funcDecl.getStmts())) {
-                        throw new SemanticAnalysisException("Function is missing a return statement",
-                                        funcDecl.getLine(), funcDecl.getColumn());
-                }
-
-                validateReturnTypes(funcDecl.getStmts(), varAndParamMap, returnType, funcDecl);
+        List<Statement> body = functionDecl.getBody();
+        if (body != null) {
+            for (Statement stmt : body) {
+                stmt.analyze(functionByName, typeEnvironment);
+            }
         }
 
-        private void validateReturnTypes(Iterable<Statement> statements, Map<String, Type> varAndParamMap,
-                                         Type expectedReturn, FunctionDecl funcDecl) throws SemanticAnalysisException {
-                for (Statement stmt : statements) {
-                        validateReturnType(stmt, varAndParamMap, expectedReturn, funcDecl);
-                }
+        if (returnType != Type.VOID && !containsReturn(body)) {
+            throw new SemanticAnalysisException(
+                    "Function '" + functionDecl.getName().getLexeme() + "' must return a value",
+                    functionDecl.getLine(), functionDecl.getColumn());
+        }
+    }
+
+    private void analyzeProgramBody() throws SemanticAnalysisException {
+        Map<String, Type> scope = new HashMap<>(globalVariableTypes);
+        for (Statement stmt : program.getStmts()) {
+            stmt.analyze(functionByName, scope);
+        }
+    }
+
+    private void ensureUniqueGlobalLabel(Set<String> labels, Declaration decl, String label)
+            throws SemanticAnalysisException {
+        if (!labels.add(label)) {
+            throw new SemanticAnalysisException(
+                    "Duplicate declaration: '" + label + "'",
+                    decl.getLine(), decl.getColumn());
+        }
+    }
+
+    private void registerGlobalDeclaration(Declaration decl, String label) throws SemanticAnalysisException {
+        if (decl instanceof VariableDecl) {
+            registerGlobalVariable((VariableDecl) decl, label);
+        } else if (decl instanceof FunctionDecl) {
+            functionByName.put(label, (FunctionDecl) decl);
+        }
+    }
+
+    private void registerGlobalVariable(VariableDecl varDecl, String label) throws SemanticAnalysisException {
+        Type type = Type.fromToken(varDecl.getType());
+        if (type == Type.VOID) {
+            throw new SemanticAnalysisException(
+                    "Variables cannot be declared with type void",
+                    varDecl.getLine(), varDecl.getColumn());
+        }
+        globalVariableTypes.put(label, type);
+    }
+
+    private void registerLocalName(VariableDecl decl, Set<String> names) throws SemanticAnalysisException {
+        String label = decl.getName().getLexeme();
+        if (!names.add(label)) {
+            throw new SemanticAnalysisException(
+                    "Duplicate declaration inside function: '" + label + "'",
+                    decl.getLine(), decl.getColumn());
+        }
+    }
+
+    private void ensureNotFunctionName(String name, int line, int column) throws SemanticAnalysisException {
+        if (functionByName.containsKey(name)) {
+            throw new SemanticAnalysisException(
+                    "Identifier '" + name + "' conflicts with an existing function name",
+                    line, column);
+        }
+    }
+
+    private void populateVariableTypes(List<VariableDecl> declarations,
+                                       String voidErrorMessage,
+                                       Map<String, Type> typeEnvironment,
+                                       Set<String> namesInFunction) throws SemanticAnalysisException {
+        if (declarations == null) {
+            return;
         }
 
-        private void validateReturnType(Statement stmt, Map<String, Type> varAndParamMap,
-                                        Type expectedReturn, FunctionDecl funcDecl) throws SemanticAnalysisException {
-                if (stmt instanceof ReturnStmt) {
-                        ReturnStmt ret = (ReturnStmt) stmt;
-                        if (expectedReturn == Type.VOID) {
-                                if (ret.getExpr() != null) {
-                                        throw new SemanticAnalysisException("Void functions cannot return a value",
-                                                        ret.getReturnToken().getLine(), ret.getReturnToken().getCol());
-                                }
-                                return;
-                        }
+        for (VariableDecl declaration : declarations) {
+            registerLocalName(declaration, namesInFunction);
+            ensureNotFunctionName(declaration.getName().getLexeme(),
+                    declaration.getLine(), declaration.getColumn());
 
-                        if (ret.getExpr() == null) {
-                                throw new SemanticAnalysisException("Return statement must return a value",
-                                                ret.getReturnToken().getLine(), ret.getReturnToken().getCol());
-                        }
+            Type type = Type.fromToken(declaration.getType());
+            if (type == Type.VOID) {
+                throw new SemanticAnalysisException(
+                        voidErrorMessage,
+                        declaration.getLine(), declaration.getColumn());
+            }
 
-                        Type actual = ret.getExpr().analyzeAndGetType(funcMap, varAndParamMap);
-                        if (actual != expectedReturn) {
-                                throw new SemanticAnalysisException("Return type mismatch", ret);
-                        }
-                        return;
-                }
+            typeEnvironment.put(declaration.getName().getLexeme(), type);
+        }
+    }
 
-                if (stmt instanceof Block) {
-                        validateReturnTypes(((Block) stmt).getStatements(), varAndParamMap, expectedReturn, funcDecl);
-                } else if (stmt instanceof IfThenElse) {
-                        IfThenElse ite = (IfThenElse) stmt;
-                        validateReturnTypes(ite.getThenStmts(), varAndParamMap, expectedReturn, funcDecl);
-                        validateReturnTypes(ite.getElseStmts(), varAndParamMap, expectedReturn, funcDecl);
-                } else if (stmt instanceof WhileLoop) {
-                        validateReturnTypes(((WhileLoop) stmt).getBody(), varAndParamMap, expectedReturn, funcDecl);
-                }
+    private boolean containsReturn(List<Statement> statements) {
+        if (statements == null) {
+            return false;
         }
 
-        private boolean containsReturn(Statement stmt) {
-                if (stmt instanceof ReturnStmt) {
-                        return true;
-                }
-
-                if (stmt instanceof Block) {
-                        return containsReturn(((Block) stmt).getStatements());
-                }
-
-                if (stmt instanceof IfThenElse) {
-                        IfThenElse ite = (IfThenElse) stmt;
-                        return containsReturn(ite.getThenStmts()) || containsReturn(ite.getElseStmts());
-                }
-
-                if (stmt instanceof WhileLoop) {
-                        return containsReturn(((WhileLoop) stmt).getBody());
-                }
-
-                return false;
+        for (Statement stmt : statements) {
+            if (statementContainsReturn(stmt)) {
+                return true;
+            }
         }
 
-        private boolean containsReturn(Iterable<Statement> statements) {
-                for (Statement stmt : statements) {
-                        if (containsReturn(stmt)) {
-                                return true;
-                        }
-                }
-                return false;
-        }
-	
-	
-        private Map<String, Type> getVarAndParamMap(FunctionDecl funcDecl) throws SemanticAnalysisException {
+        return false;
+    }
 
-                Map<String, Type> map = new HashMap<>();
-                for (VariableDecl param : funcDecl.getParams()) {
-                        map.put(param.getLabelLexeme(), Type.fromToken(param.getType()));
-                }
-                for (VariableDecl local : funcDecl.getLocalVars()) {
-                        map.put(local.getLabelLexeme(), Type.fromToken(local.getType()));
-                }
-                return map;
+    private boolean statementContainsReturn(Statement statement) {
+        if (statement instanceof ReturnStmt) {
+            return true;
         }
 
-        private void checkNoDuplicateFuncLabels(FunctionDecl funcDecl)
-                                                                        throws SemanticAnalysisException {
-
-                Set<String> labels = new HashSet<>();
-                labels.add(funcDecl.getLabelLexeme());
-
-                for (VariableDecl param : funcDecl.getParams()) {
-                        String label = param.getLabelLexeme();
-                        if (labels.contains(label)) {
-                                throw new SemanticAnalysisException("Duplicate label '" + label + "' in function",
-                                                param.getLine(), param.getColumn());
-                        }
-                        labels.add(label);
-                }
-
-                for (VariableDecl local : funcDecl.getLocalVars()) {
-                        String label = local.getLabelLexeme();
-                        if (labels.contains(label)) {
-                                throw new SemanticAnalysisException("Duplicate label '" + label + "' in function",
-                                                local.getLine(), local.getColumn());
-                        }
-                        labels.add(label);
-                }
+        if (statement instanceof IfThenElse) {
+            IfThenElse ite = (IfThenElse) statement;
+            return containsReturn(ite.getThenStmts()) || containsReturn(ite.getElseStmts());
         }
-	
-        private void checkNoDuplicateProgLabels() throws SemanticAnalysisException {
 
-                Set<String> labels = new HashSet<String>();
-
-                for (Declaration decl : progAST.getDecls()) {
-                        String label = decl.getLabelLexeme();
- 			
-			if (labels.contains(label)) {
-				throw new SemanticAnalysisException("Cannot have duplicate label '"
-						+ label + "' in program", decl);
-			} else {
-				labels.add(label);
-			}
-			
-		}
-	}
-	
-        private void setProgVarAndFuncMaps() throws SemanticAnalysisException {
-
-                funcMap = new HashMap<>();
-                progVarMap = new HashMap<>();
-
-                for (Declaration decl : progAST.getDecls()) {
-
-                        String label = decl.getLabelLexeme();
-			
-			if (decl instanceof FunctionDecl) {
-				FunctionDecl funcDecl = (FunctionDecl)decl;
-				funcMap.put(label, funcDecl);
-				
-			} else if (decl instanceof VariableDecl) {
-				VariableDecl varDecl = (VariableDecl)decl;
-                                progVarMap.put(label, Type.fromToken(varDecl.getType()));
-                        }
-                }
+        if (statement instanceof WhileLoop) {
+            return containsReturn(((WhileLoop) statement).getBody());
         }
+
+        if (statement instanceof Block) {
+            return containsReturn(((Block) statement).getStatements());
+        }
+
+        return false;
+    }
 }

@@ -1,4 +1,5 @@
 package splat.semanticanalyzer;
+
 import splat.lexer.Token;
 
 public enum Type {

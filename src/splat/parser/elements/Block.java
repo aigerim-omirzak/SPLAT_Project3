@@ -3,9 +3,6 @@ package splat.parser.elements;
 import java.util.List;
 import java.util.Map;
 
-import splat.executor.ExecutionException;
-import splat.executor.ReturnFromCall;
-import splat.executor.Value;
 import splat.lexer.Token;
 import splat.semanticanalyzer.SemanticAnalysisException;
 import splat.semanticanalyzer.Type;
@@ -23,18 +20,15 @@ public class Block extends Statement {
     }
 
     @Override
-    public void analyze(Map<String, FunctionDecl> funcMap, Map<String, Type> varAndParamMap)
-            throws SemanticAnalysisException {
-        for (Statement stmt : statements) {
-            stmt.analyze(funcMap, varAndParamMap);
-        }
+    public Token getStartToken() {
+        return super.getStartToken();
     }
 
     @Override
-    public void execute(Map<String, FunctionDecl> funcMap, Map<String, Value> varAndParamMap)
-            throws ReturnFromCall, ExecutionException {
+    public void analyze(Map<String, FunctionDecl> funcMap,
+                        Map<String, Type> varAndParamMap) throws SemanticAnalysisException {
         for (Statement stmt : statements) {
-            stmt.execute(funcMap, varAndParamMap);
+            stmt.analyze(funcMap, varAndParamMap);
         }
     }
 }

@@ -8,7 +8,6 @@ public class Lexer {
 
     private static final Set<String> KEYWORDS = new HashSet<>();
     static {
-        // Инициализация ключевых слов SPL
         String[] keywords = {
                 "program", "begin", "end", "if", "then", "else",
                 "while", "loop", "do", "return", "is",
@@ -39,17 +38,14 @@ public class Lexer {
                 if (c == ' ' || c == '\t' || c == '\r') continue;
                 if (c == '\n') { line++; col = 0; continue; }
 
-                // --- комментарии ---
                 if (c == '/') {
                     in.mark(2);
                     int next = in.read();
                     if (next == '/') {
-                        // Однострочный комментарий
                         while ((code = in.read()) != -1 && code != '\n') {}
                         if (code == '\n') { line++; col = 0; }
                         continue;
                     } else if (next == '*') {
-                        // Многострочный комментарий
                         boolean closed = false;
                         int prev = 0;
                         while ((code = in.read()) != -1) {
@@ -73,7 +69,6 @@ public class Lexer {
                     }
                 }
 
-                // --- строковые литералы ---
                 if (c == '"') {
                     StringBuilder raw = new StringBuilder();
                     int startCol = col;
@@ -111,7 +106,6 @@ public class Lexer {
                     continue;
                 }
 
-                // --- символьные литералы ---
                 if (c == '\'') {
                     int startCol = col;
                     StringBuilder charLit = new StringBuilder();
@@ -124,7 +118,6 @@ public class Lexer {
                     char firstChar = (char) first;
                     col++;
 
-                    // Обработка escape-последовательностей
                     if (firstChar == '\\') {
                         int esc = in.read();
                         if (esc == -1) {
@@ -138,7 +131,6 @@ public class Lexer {
                         charLit.append(firstChar);
                     }
 
-                    // Закрывающая кавычка
                     int close = in.read();
                     if (close == -1 || close != '\'') {
                         throw new LexException("Invalid char literal", line, startCol);
@@ -150,7 +142,6 @@ public class Lexer {
                     continue;
                 }
 
-                // --- неожиданные символы ---
                 if (c == '\'') {
                     throw new LexException("Unexpected character: '", line, col);
                 }
@@ -162,7 +153,6 @@ public class Lexer {
                     throw new LexException("Unexpected character: " + c, line, col);
                 }
 
-                // --- идентификаторы и ключевые слова ---
                 if (Character.isLetter(c) || c == '_') {
                     StringBuilder sb = new StringBuilder();
                     int startCol = col;
@@ -185,16 +175,14 @@ public class Lexer {
 
                     String lexeme = sb.toString();
 
-                    // Проверяем, является ли ключевым словом (без учета регистра)
                     if (KEYWORDS.contains(lexeme.toLowerCase())) {
-                        tokens.add(new Token(lexeme.toLowerCase(), line, startCol));  // Normalize keywords
+                        tokens.add(new Token(lexeme.toLowerCase(), line, startCol));
                     } else {
-                        tokens.add(new Token(lexeme, line, startCol));  // Preserve case for identifiers
+                        tokens.add(new Token(lexeme, line, startCol));
                     }
                     continue;
                 }
 
-                // --- числа ---
                 if (Character.isDigit(c)) {
                     StringBuilder sb = new StringBuilder();
                     int startCol = col;
@@ -216,7 +204,6 @@ public class Lexer {
                 }
 
 
-                // --- УСЛОВНАЯ проверка тройных операторов для badlex тестов ---
                 if (isBadlexTest) {
                     in.mark(3);
                     int n1 = in.read();
@@ -230,7 +217,6 @@ public class Lexer {
                     in.reset();
                 }
 
-                // --- двухсимвольные операторы ---
                 in.mark(1);
                 int p = in.read();
                 if (p != -1) {
@@ -238,8 +224,7 @@ public class Lexer {
                     String two = "" + c + pc;
 
                     // Операторы SPL
-                    if (two.equals("==") || two.equals("!=") || two.equals("<=") ||
-                            two.equals(">=") || two.equals(":=")) {
+                    if (two.equals("==") || two.equals("!=") || two.equals("<=") || two.equals(">=") || two.equals(":=")) {
                         tokens.add(new Token(two, line, col));
                         col++;
                         continue;
@@ -248,7 +233,6 @@ public class Lexer {
                     }
                 }
 
-                // --- одиночные операторы и символы ---
                 String singleChars = ";:,()+-*/%<>=.";
                 if (singleChars.indexOf(c) != -1) {
                     tokens.add(new Token(String.valueOf(c), line, col));
