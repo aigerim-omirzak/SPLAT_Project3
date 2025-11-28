@@ -56,7 +56,7 @@ public class FunctionCall extends Expression {
     public Value evaluate(Map<String, FunctionDecl> funcMap,
                           Map<String, Value> varAndParamMap) throws ExecutionException, ReturnFromCall {
         FunctionDecl decl = funcMap.get(name.getLexeme());
-        if (decl == null) {
+        if (decl == null) {https://github.com/aigerim-omirzak/Splat_Project/pull/10/conflict?name=src%252Fsplat%252Fparser%252Felements%252FFunctionCall.java&ancestor_oid=d5ea2149a66d91b1922599d19ee03ef97cbe37c9&base_oid=a73bb4eb3ab9a094b95b46d08a24a39c7c18dca7&head_oid=23c13bbd2c36c24d4527663bdf5456a3e3dd4ef6
             throw new ExecutionException("Unknown function '" + name.getLexeme() + "'", getLine(), getColumn());
         }
 
