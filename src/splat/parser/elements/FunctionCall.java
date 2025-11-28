@@ -49,6 +49,36 @@ public class FunctionCall extends Expression {
 
     public Type analyzeCall(Map<String, FunctionDecl> funcMap,
                             Map<String, Type> varAndParamMap) throws SemanticAnalysisException {
+        FunctionDecl decl = requireFunctionDeclaration(funcMap);
+        verifyArgumentCount(decl);
+        validateArgumentTypes(funcMap, varAndParamMap, decl);
+
+        Token returnToken = decl.getReturnType();
+        return Type.fromToken(returnToken);
+    }
+
+    @Override
+    public Value evaluate(Map<String, FunctionDecl> funcMap,
+                          Map<String, Value> varAndParamMap) throws ExecutionException {
+        FunctionDecl declaration = fetchFunctionDeclaration(funcMap);
+        Map<String, Value> callContext = prepareCallContext(declaration, funcMap, varAndParamMap);
+
+        List<Statement> body = declaration.getBody();
+        try {
+            if (body != null) {
+                for (Statement stmt : body) {
+                    stmt.execute(funcMap, callContext);
+                }
+            }
+        } catch (ReturnFromCall ret) {
+            return ret.getReturnVal();
+        }
+
+        ensureVoidReturn(declaration);
+        return null;
+    }
+
+    private FunctionDecl requireFunctionDeclaration(Map<String, FunctionDecl> funcMap) throws SemanticAnalysisException {
         String funcName = name.getLexeme();
         FunctionDecl decl = funcMap.get(funcName);
         if (decl == null) {
@@ -56,15 +86,23 @@ public class FunctionCall extends Expression {
                     "Function '" + funcName + "' is not defined",
                     name.getLine(), name.getCol());
         }
+        return decl;
+    }
 
+    private void verifyArgumentCount(FunctionDecl decl) throws SemanticAnalysisException {
         List<VariableDecl> params = decl.getParams();
         if (params.size() != args.size()) {
             throw new SemanticAnalysisException(
-                    "Function '" + funcName + "' expects " + params.size()
+                    "Function '" + name.getLexeme() + "' expects " + params.size()
                             + " arguments but got " + args.size(),
                     name.getLine(), name.getCol());
         }
+    }
 
+    private void validateArgumentTypes(Map<String, FunctionDecl> funcMap,
+                                       Map<String, Type> varAndParamMap,
+                                       FunctionDecl decl) throws SemanticAnalysisException {
+        List<VariableDecl> params = decl.getParams();
         for (int i = 0; i < params.size(); i++) {
             VariableDecl paramDecl = params.get(i);
             Type expected = Type.fromToken(paramDecl.getType());
@@ -77,31 +115,32 @@ public class FunctionCall extends Expression {
             Type actual = args.get(i).analyzeAndGetType(funcMap, varAndParamMap);
             if (expected != actual) {
                 throw new SemanticAnalysisException(
-                        "Argument " + (i + 1) + " for function '" + funcName
+                        "Argument " + (i + 1) + " for function '" + name.getLexeme()
                                 + "' expected type " + expected + " but found " + actual,
                         args.get(i).getLine(), args.get(i).getColumn());
             }
         }
-
-        Token returnToken = decl.getReturnType();
-        return Type.fromToken(returnToken);
     }
 
-    @Override
-    public Value evaluate(Map<String, FunctionDecl> funcMap,
-                          Map<String, Value> varAndParamMap) throws ExecutionException {
+    private FunctionDecl fetchFunctionDeclaration(Map<String, FunctionDecl> funcMap) throws ExecutionException {
         FunctionDecl decl = funcMap.get(name.getLexeme());
         if (decl == null) {
-            throw new ExecutionException("Function '" + name.getLexeme() + "' is not defined", name.getLine(), name.getCol());
+            throw new ExecutionException(
+                    "Function '" + name.getLexeme() + "' is not defined",
+                    name.getLine(), name.getCol());
         }
+        return decl;
+    }
 
+    private Map<String, Value> prepareCallContext(FunctionDecl decl,
+                                                 Map<String, FunctionDecl> funcMap,
+                                                 Map<String, Value> varAndParamMap) throws ExecutionException {
         List<Value> argVals = new ArrayList<>();
         for (Expression arg : args) {
             argVals.add(arg.evaluate(funcMap, varAndParamMap));
         }
 
         Map<String, Value> callVarMap = new HashMap<>();
-
         List<VariableDecl> params = decl.getParams();
         for (int i = 0; i < params.size(); i++) {
             VariableDecl paramDecl = params.get(i);
@@ -118,17 +157,10 @@ public class FunctionCall extends Expression {
                 }
             }
         }
+        return callVarMap;
+    }
 
-        List<Statement> body = decl.getBody();
-        try {
-            if (body != null) {
-                for (Statement stmt : body) {
-                    stmt.execute(funcMap, callVarMap);
-                }
-            }
-        } catch (ReturnFromCall ret) {
-            return ret.getReturnVal();
-        }
+    private void ensureVoidReturn(FunctionDecl decl) throws ExecutionException {
         try {
             Type returnType = Type.fromToken(decl.getReturnType());
             if (returnType != Type.VOID) {
@@ -137,7 +169,5 @@ public class FunctionCall extends Expression {
         } catch (SemanticAnalysisException ex) {
             throw new ExecutionException(ex.getMessage(), name.getLine(), name.getCol());
         }
-
-        return null;
     }
 }

@@ -16,12 +16,6 @@ public class FunctionCallStmt extends Statement {
         this.call = call;
     }
 
-
-    public Token getStartToken() {
-        return call.getStartToken();
-    }
-
-
     @Override
     public String toString() {
         return "FunctionCallStmt(" + call + ")";
@@ -31,18 +25,21 @@ public class FunctionCallStmt extends Statement {
     public void analyze(Map<String, FunctionDecl> funcMap,
                         Map<String, Type> varAndParamMap) throws SemanticAnalysisException {
         Type returnType = call.analyzeCall(funcMap, varAndParamMap);
-        if (returnType != Type.VOID) {
-            Token start = call.getStartToken();
-            throw new SemanticAnalysisException(
-                    "Function '" + start.getLexeme() + "' returns " + returnType
-                            + " and cannot be used as a statement",
-                    start.getLine(), start.getCol());
-        }
+        ensureVoidCall(returnType, call.getStartToken());
     }
 
     @Override
     public void execute(Map<String, FunctionDecl> funcMap,
                         Map<String, Value> varAndParamMap) throws ExecutionException {
         call.evaluate(funcMap, varAndParamMap);
+    }
+
+    private void ensureVoidCall(Type returnType, Token startToken) throws SemanticAnalysisException {
+        if (returnType != Type.VOID) {
+            throw new SemanticAnalysisException(
+                    "Function '" + startToken.getLexeme() + "' returns " + returnType
+                            + " and cannot be used as a statement",
+                    startToken.getLine(), startToken.getCol());
+        }
     }
 }

@@ -6,8 +6,8 @@ import splat.lexer.Token;
 
 public class ProgramAST extends ASTElement {
 
-    private List<Declaration> decls;
-    private List<Statement> stmts;
+    private final List<Declaration> decls;
+    private final List<Statement> stmts;
 
     public ProgramAST(List<Declaration> decls,
                       List<Statement> stmts,
@@ -26,17 +26,18 @@ public class ProgramAST extends ASTElement {
         return stmts;
     }
 
+    @Override
     public String toString() {
-        String result = "program \n";
+        StringBuilder result = new StringBuilder("program \n");
         for (Declaration decl : decls) {
-            result = result + "   " + decl + "\n";
+            result.append("   ").append(decl).append("\n");
         }
-        result = result + "begin \n";
+        result.append("begin \n");
         for (Statement stmt : stmts) {
-            result = result + "   " + stmt + "\n";
+            result.append("   ").append(stmt).append("\n");
         }
-        result = result	+ "end;";
+        result.append("end;");
 
-        return result;
+        return result.toString();
     }
 }

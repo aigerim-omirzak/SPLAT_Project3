@@ -5,8 +5,8 @@ import splat.lexer.Token;
 public abstract class ASTElement {
 
     private final Token token;
-    private int line;
-    private int column;
+    private final int line;
+    private final int column;
 
     public ASTElement(Token tok) {
         this.token = tok;

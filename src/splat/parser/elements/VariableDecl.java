@@ -3,11 +3,11 @@ package splat.parser.elements;
 import splat.lexer.Token;
 
 public class VariableDecl extends Declaration {
-    private final Token type;
+    private final Token typeToken;
 
     public VariableDecl(Token name, Token type) {
         super(name);
-        this.type = type;
+        this.typeToken = type;
     }
 
     public Token getName() {
@@ -15,9 +15,8 @@ public class VariableDecl extends Declaration {
     }
 
     public Token getType() {
-        return type;
+        return typeToken;
     }
-
 
     public Token getStartToken() {
         return getLabel();
@@ -25,6 +24,10 @@ public class VariableDecl extends Declaration {
 
     @Override
     public String toString() {
-        return String.format("VarDecl(name=%s, type=%s)", getLabel().getLexeme(), type.getLexeme());
+        return String.format(
+                "VarDecl(name=%s, type=%s)",
+                getLabel().getLexeme(),
+                typeToken.getLexeme()
+        );
     }
 }

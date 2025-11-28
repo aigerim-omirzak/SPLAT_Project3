@@ -12,10 +12,10 @@ import splat.semanticanalyzer.SemanticAnalysisException;
 import splat.semanticanalyzer.Type;
 
 public class IfThenElse extends Statement {
-    private Expression condition;
-    private List<Statement> thenStmts;
-    private List<Statement> elseStmts;
-    private Token ifToken;
+    private final Expression condition;
+    private final List<Statement> thenStmts;
+    private final List<Statement> elseStmts;
+    private final Token ifToken;
 
     public IfThenElse(Token tok, Expression condition,
                       List<Statement> thenStmts, List<Statement> elseStmts) {
@@ -30,43 +30,64 @@ public class IfThenElse extends Statement {
         return ifToken;
     }
 
-    public Expression getCondition() { return condition; }
-    public List<Statement> getThenStmts() { return thenStmts; }
-    public List<Statement> getElseStmts() { return elseStmts; }
+    public Expression getCondition() {
+        return condition;
+    }
+
+    public List<Statement> getThenStmts() {
+        return thenStmts;
+    }
+
+    public List<Statement> getElseStmts() {
+        return elseStmts;
+    }
 
     @Override
     public void analyze(Map<String, FunctionDecl> funcMap,
                         Map<String, Type> varAndParamMap) throws SemanticAnalysisException {
-        Type condType = condition.analyzeAndGetType(funcMap, varAndParamMap);
-        if (condType != Type.BOOLEAN) {
-            throw new SemanticAnalysisException(
-                    "If condition must be Boolean",
-                    condition.getLine(), condition.getColumn());
-        }
-
-        for (Statement stmt : thenStmts) {
-            stmt.analyze(funcMap, varAndParamMap);
-        }
-        for (Statement stmt : elseStmts) {
-            stmt.analyze(funcMap, varAndParamMap);
-        }
+        validateConditionType(funcMap, varAndParamMap);
+        analyzeBranch(funcMap, varAndParamMap, thenStmts);
+        analyzeBranch(funcMap, varAndParamMap, elseStmts);
     }
 
     @Override
     public void execute(Map<String, FunctionDecl> funcMap,
                         Map<String, Value> varAndParamMap) throws ReturnFromCall, ExecutionException {
         Value condVal = condition.evaluate(funcMap, varAndParamMap);
+        ensureBooleanCondition(condVal);
+        executeBranch(funcMap, varAndParamMap, condVal.asBoolean() ? thenStmts : elseStmts);
+    }
+
+    private void validateConditionType(Map<String, FunctionDecl> funcMap,
+                                       Map<String, Type> varAndParamMap) throws SemanticAnalysisException {
+        Type condType = condition.analyzeAndGetType(funcMap, varAndParamMap);
+        if (condType != Type.BOOLEAN) {
+            throw new SemanticAnalysisException(
+                    "If condition must be Boolean",
+                    condition.getLine(),
+                    condition.getColumn());
+        }
+    }
+
+    private void analyzeBranch(Map<String, FunctionDecl> funcMap,
+                               Map<String, Type> varAndParamMap,
+                               List<Statement> branchStatements) throws SemanticAnalysisException {
+        for (Statement stmt : branchStatements) {
+            stmt.analyze(funcMap, varAndParamMap);
+        }
+    }
+
+    private void ensureBooleanCondition(Value condVal) throws ExecutionException {
         if (!condVal.isBoolean()) {
             throw new ExecutionException("If condition must be Boolean", condition.getLine(), condition.getColumn());
         }
-        if (condVal.asBoolean()) {
-            for (Statement stmt : thenStmts) {
-                stmt.execute(funcMap, varAndParamMap);
-            }
-        } else {
-            for (Statement stmt : elseStmts) {
-                stmt.execute(funcMap, varAndParamMap);
-            }
+    }
+
+    private void executeBranch(Map<String, FunctionDecl> funcMap,
+                               Map<String, Value> varAndParamMap,
+                               List<Statement> branchStatements) throws ReturnFromCall, ExecutionException {
+        for (Statement stmt : branchStatements) {
+            stmt.execute(funcMap, varAndParamMap);
         }
     }
 }

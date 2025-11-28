@@ -11,7 +11,7 @@ import splat.semanticanalyzer.SemanticAnalysisException;
 import splat.semanticanalyzer.Type;
 
 public class Block extends Statement {
-    private List<Statement> statements;
+    private final List<Statement> statements;
 
     public Block(Token tok, List<Statement> stmts) {
         super(tok);
@@ -20,11 +20,6 @@ public class Block extends Statement {
 
     public List<Statement> getStatements() {
         return statements;
-    }
-
-    @Override
-    public Token getStartToken() {
-        return super.getStartToken();
     }
 
     @Override

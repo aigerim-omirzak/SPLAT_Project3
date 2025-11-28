@@ -4,11 +4,11 @@ import splat.semanticanalyzer.Type;
 
 public class Value {
     private final Type type;
-    private final Object value;
+    private final Object payload;
 
-    public Value(Type type, Object value) {
+    public Value(Type type, Object payload) {
         this.type = type;
-        this.value = value;
+        this.payload = payload;
     }
 
     public Type getType() {
@@ -28,24 +28,18 @@ public class Value {
     }
 
     public int asInteger() {
-        if (!isInteger()) {
-            throw new IllegalStateException("Not an integer value");
-        }
-        return (Integer) value;
+        ensureType(Type.INTEGER, "Not an integer value");
+        return (Integer) payload;
     }
 
     public boolean asBoolean() {
-        if (!isBoolean()) {
-            throw new IllegalStateException("Not a boolean value");
-        }
-        return (Boolean) value;
+        ensureType(Type.BOOLEAN, "Not a boolean value");
+        return (Boolean) payload;
     }
 
     public String asString() {
-        if (!isString()) {
-            throw new IllegalStateException("Not a string value");
-        }
-        return (String) value;
+        ensureType(Type.STRING, "Not a string value");
+        return (String) payload;
     }
 
     public static Value defaultValue(Type type) {
@@ -76,9 +70,12 @@ public class Value {
 
     @Override
     public String toString() {
-        if (value == null) {
-            return "null";
+        return String.valueOf(payload);
+    }
+
+    private void ensureType(Type expected, String message) {
+        if (type != expected) {
+            throw new IllegalStateException(message);
         }
-        return value.toString();
     }
 }

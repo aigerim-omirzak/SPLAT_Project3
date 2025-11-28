@@ -9,34 +9,34 @@ import splat.semanticanalyzer.SemanticAnalysisException;
 import splat.semanticanalyzer.Type;
 
 public class Literal extends Expression {
-    private String value;
+    private final String lexeme;
 
     public Literal(Token token) {
         super(token);
-        this.value = token.getLexeme();
+        this.lexeme = token.getLexeme();
     }
 
     public String getValue() {
-        return value;
+        return lexeme;
     }
 
     public String getStringValue() {
-        if (value.startsWith("\"") && value.endsWith("\"")) {
-            return value.substring(1, value.length() - 1);
+        if (isStringLiteral()) {
+            return lexeme.substring(1, lexeme.length() - 1);
         }
-        return value;
+        return lexeme;
     }
 
     public boolean isStringLiteral() {
-        return value.startsWith("\"") && value.endsWith("\"");
+        return lexeme.startsWith("\"") && lexeme.endsWith("\"");
     }
 
     public boolean isIntegerLiteral() {
-        return value.matches("\\d+");
+        return lexeme.matches("\\d+");
     }
 
     public boolean isBooleanLiteral() {
-        return value.equals("true") || value.equals("false");
+        return "true".equals(lexeme) || "false".equals(lexeme);
     }
 
     @Override
@@ -53,7 +53,7 @@ public class Literal extends Expression {
         }
 
         throw new SemanticAnalysisException(
-                "Unknown literal '" + value + "'",
+                "Unknown literal '" + lexeme + "'",
                 getLine(), getColumn());
     }
 
@@ -61,14 +61,14 @@ public class Literal extends Expression {
     public Value evaluate(Map<String, FunctionDecl> funcMap,
                           Map<String, Value> varAndParamMap) throws ExecutionException {
         if (isIntegerLiteral()) {
-            return Value.ofInteger(Integer.parseInt(value));
+            return Value.ofInteger(Integer.parseInt(lexeme));
         }
         if (isBooleanLiteral()) {
-            return Value.ofBoolean(Boolean.parseBoolean(value));
+            return Value.ofBoolean(Boolean.parseBoolean(lexeme));
         }
         if (isStringLiteral()) {
             return Value.ofString(getStringValue());
         }
-        throw new ExecutionException("Unknown literal '" + value + "'", getLine(), getColumn());
+        throw new ExecutionException("Unknown literal '" + lexeme + "'", getLine(), getColumn());
     }
 }

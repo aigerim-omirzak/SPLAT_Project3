@@ -65,12 +65,14 @@ public class UnaryOp extends Expression {
                           Map<String, Value> varAndParamMap) throws ExecutionException {
         Value child = expr.evaluate(funcMap, varAndParamMap);
         String opLexeme = op.getLexeme();
-        if ("-".equals(opLexeme)) {
-            return Value.ofInteger(-child.asInteger());
+
+        switch (opLexeme) {
+            case "-":
+                return Value.ofInteger(-child.asInteger());
+            case "not":
+                return Value.ofBoolean(!child.asBoolean());
+            default:
+                throw new ExecutionException("Unknown unary operator '" + opLexeme + "'", op.getLine(), op.getCol());
         }
-        if ("not".equals(opLexeme)) {
-            return Value.ofBoolean(!child.asBoolean());
-        }
-        throw new ExecutionException("Unknown unary operator '" + opLexeme + "'", op.getLine(), op.getCol());
     }
 }
