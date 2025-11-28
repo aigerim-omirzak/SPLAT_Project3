@@ -27,11 +27,30 @@ public class Value {
         return new Value(Type.VOID, null);
     }
 
+    public static Value defaultFor(Type type) {
+        switch (type) {
+            case INTEGER:
+                return ofInteger(0);
+            case BOOLEAN:
+                return ofBoolean(false);
+            case STRING:
+                return ofString("");
+            case VOID:
+                return voidValue();
+            default:
+                throw new IllegalArgumentException("Unknown type for default value: " + type);
+        }
+    }
+
     public Type getType() {
         return type;
     }
 
     public Object getRaw() {
+        return value;
+    }
+
+    public Object getValue() {
         return value;
     }
 

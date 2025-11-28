@@ -54,7 +54,7 @@ public class Executor {
                 VariableDecl varDecl = (VariableDecl)decl;
                 try {
                     Type type = Type.fromToken(varDecl.getType());
-                    progVarMap.put(label, defaultValue(type));
+                    progVarMap.put(label, Value.defaultFor(type));
                 } catch (SemanticAnalysisException sae) {
                     // Should have been caught earlier during analysis
                     throw new RuntimeException(sae);
@@ -90,7 +90,7 @@ public class Executor {
         for (VariableDecl local : decl.getLocalVars()) {
             try {
                 Type type = Type.fromToken(local.getType());
-                newVarMap.put(local.getLabel().toString(), defaultValue(type));
+                newVarMap.put(local.getLabel().toString(), Value.defaultFor(type));
             } catch (SemanticAnalysisException sae) {
                 throw new ExecutionException(sae.getMessage(), local.getLine(), local.getColumn());
             }
@@ -105,23 +105,9 @@ public class Executor {
         }
 
         try {
-            return defaultValue(Type.fromToken(decl.getReturnType()));
+            return Value.defaultFor(Type.fromToken(decl.getReturnType()));
         } catch (SemanticAnalysisException sae) {
             throw new ExecutionException(sae.getMessage(), decl.getLine(), decl.getColumn());
-        }
-    }
-
-    private Value defaultValue(Type type) {
-        switch (type) {
-            case INTEGER:
-                return Value.ofInteger(0);
-            case BOOLEAN:
-                return Value.ofBoolean(false);
-            case STRING:
-                return Value.ofString("");
-            case VOID:
-            default:
-                return Value.voidValue();
         }
     }
 }

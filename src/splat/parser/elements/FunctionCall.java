@@ -77,7 +77,7 @@ public class FunctionCall extends Expression {
         for (VariableDecl local : decl.getLocalVars()) {
             try {
                 Type type = Type.fromToken(local.getType());
-                newVarMap.put(local.getLabelLexeme(), defaultValue(type));
+                newVarMap.put(local.getLabelLexeme(), Value.defaultFor(type));
             } catch (SemanticAnalysisException sae) {
                 throw new ExecutionException(sae.getMessage(), local.getLine(), local.getColumn());
             }
@@ -92,22 +92,9 @@ public class FunctionCall extends Expression {
         }
 
         try {
-            return defaultValue(Type.fromToken(decl.getReturnType()));
+            return Value.defaultFor(Type.fromToken(decl.getReturnType()));
         } catch (SemanticAnalysisException sae) {
             throw new ExecutionException(sae.getMessage(), decl.getLine(), decl.getColumn());
-        }
-    }
-
-    private Value defaultValue(Type type) {
-        switch (type) {
-            case INTEGER:
-                return Value.ofInteger(0);
-            case BOOLEAN:
-                return Value.ofBoolean(false);
-            case STRING:
-                return Value.ofString("");
-            default:
-                return Value.voidValue();
         }
     }
 
