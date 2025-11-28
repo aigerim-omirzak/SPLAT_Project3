@@ -1,5 +1,7 @@
 package splat.parser.elements;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
@@ -10,6 +12,7 @@ import splat.executor.Value;
 import splat.lexer.Token;
 import splat.semanticanalyzer.SemanticAnalysisException;
 import splat.semanticanalyzer.Type;
+import splat.parser.elements.Statement;
 
 public class FunctionCall extends Expression {
     private final Token name;

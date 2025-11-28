@@ -62,4 +62,18 @@ public class UnaryOp extends Expression {
     public String toString() {
         return "(" + op.getLexeme() + " " + expr + ")";
     }
+
+    @Override
+    public Value evaluate(Map<String, FunctionDecl> funcMap,
+                          Map<String, Value> varAndParamMap) throws ExecutionException {
+        Value child = expr.evaluate(funcMap, varAndParamMap);
+        String opLexeme = op.getLexeme();
+        if ("-".equals(opLexeme)) {
+            return new IntegerValue(-child.asInteger());
+        }
+        if ("not".equals(opLexeme)) {
+            return new BooleanValue(!child.asBoolean());
+        }
+        throw new ExecutionException("Unknown unary operator '" + opLexeme + "'", op.getLine(), op.getCol());
+    }
 }

@@ -64,4 +64,19 @@ public class Literal extends Expression {
             return Value.ofString(getStringValue());
         }
     }
+
+    @Override
+    public Value evaluate(Map<String, FunctionDecl> funcMap,
+                          Map<String, Value> varAndParamMap) throws ExecutionException {
+        if (isIntegerLiteral()) {
+            return new IntegerValue(Integer.parseInt(value));
+        }
+        if (isBooleanLiteral()) {
+            return new BooleanValue(Boolean.parseBoolean(value));
+        }
+        if (isStringLiteral()) {
+            return new StringValue(getStringValue());
+        }
+        throw new ExecutionException("Unknown literal '" + value + "'", getLine(), getColumn());
+    }
 }
