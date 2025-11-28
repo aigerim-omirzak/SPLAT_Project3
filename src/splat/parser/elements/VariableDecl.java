@@ -21,10 +21,6 @@ public class VariableDecl extends Declaration {
     }
 
 
-    public Token getStartToken() {
-        return name;
-    }
-
     @Override
     public String toString() {
         return String.format("VarDecl(name=%s, type=%s)", name.getLexeme(), type.getLexeme());
