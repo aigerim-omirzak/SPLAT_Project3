@@ -29,10 +29,10 @@ public class SemanticAnalyzer {
                 // for our program functions and variables
                 checkNoDuplicateProgLabels();
 		
-		// This sets the maps that will be needed later when we need to
-		// typecheck variable references and function calls in the 
-		// program body
-		setProgVarAndFuncMaps();
+                // This sets the maps that will be needed later when we need to
+                // typecheck variable references and function calls in the
+                // program body
+                setProgVarAndFuncMaps();
 		
 		// Perform semantic analysis on the functions
 		for (FunctionDecl funcDecl : funcMap.values()) {	
@@ -46,14 +46,14 @@ public class SemanticAnalyzer {
 		
 	}
 
-	private void analyzeFuncDecl(FunctionDecl funcDecl) throws SemanticAnalysisException {
+        private void analyzeFuncDecl(FunctionDecl funcDecl) throws SemanticAnalysisException {
 		
 		// Checks to make sure we don't use the same labels more than once
 		// among our function parameters, local variables, and function names
 		checkNoDuplicateFuncLabels(funcDecl);
 		
 		// Get the types of the parameters and local variables
-		Map<String, Type> varAndParamMap = getVarAndParamMap(funcDecl);
+                Map<String, Type> varAndParamMap = getVarAndParamMap(funcDecl);
 		
 		// Perform semantic analysis on the function body
 		for (Statement stmt : funcDecl.getStmts()) {
@@ -62,7 +62,7 @@ public class SemanticAnalyzer {
 	}
 	
 	
-        private Map<String, Type> getVarAndParamMap(FunctionDecl funcDecl) {
+        private Map<String, Type> getVarAndParamMap(FunctionDecl funcDecl) throws SemanticAnalysisException {
 
                 Map<String, Type> map = new HashMap<>();
                 for (VariableDecl param : funcDecl.getParams()) {
@@ -118,7 +118,7 @@ public class SemanticAnalyzer {
 		}
 	}
 	
-        private void setProgVarAndFuncMaps() {
+        private void setProgVarAndFuncMaps() throws SemanticAnalysisException {
 
                 funcMap = new HashMap<>();
                 progVarMap = new HashMap<>();
