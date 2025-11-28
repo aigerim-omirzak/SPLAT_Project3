@@ -36,6 +36,24 @@ public class PrintStmt extends Statement {
     }
 
     @Override
+    public void analyze(Map<String, FunctionDecl> funcMap, Map<String, Type> varAndParamMap)
+            throws SemanticAnalysisException {
+        if (expr != null) {
+            expr.analyzeAndGetType(funcMap, varAndParamMap);
+        }
+    }
+
+    @Override
+    public void execute(Map<String, FunctionDecl> funcMap, Map<String, Value> varAndParamMap)
+            throws ReturnFromCall, ExecutionException {
+        if (expr != null) {
+            Value v = expr.evaluate(funcMap, varAndParamMap);
+            System.out.print(v.getRaw());
+        }
+        System.out.println();
+    }
+
+    @Override
     public String toString() {
         return "print " + expr;
     }
