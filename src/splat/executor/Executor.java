@@ -10,6 +10,7 @@ import splat.parser.elements.FunctionDecl;
 import splat.parser.elements.ProgramAST;
 import splat.parser.elements.Statement;
 import splat.parser.elements.VariableDecl;
+import splat.semanticanalyzer.SemanticAnalysisException;
 import splat.semanticanalyzer.Type;
 
 public class Executor {
@@ -51,8 +52,13 @@ public class Executor {
 
             } else if (decl instanceof VariableDecl) {
                 VariableDecl varDecl = (VariableDecl)decl;
-                Type type = Type.fromToken(varDecl.getType());
-                progVarMap.put(label, defaultValue(type));
+                try {
+                    Type type = Type.fromToken(varDecl.getType());
+                    progVarMap.put(label, defaultValue(type));
+                } catch (SemanticAnalysisException sae) {
+                    // Should have been caught earlier during analysis
+                    throw new RuntimeException(sae);
+                }
             }
         }
     }
@@ -82,8 +88,12 @@ public class Executor {
         }
 
         for (VariableDecl local : decl.getLocalVars()) {
-            Type type = Type.fromToken(local.getType());
-            newVarMap.put(local.getLabel().toString(), defaultValue(type));
+            try {
+                Type type = Type.fromToken(local.getType());
+                newVarMap.put(local.getLabel().toString(), defaultValue(type));
+            } catch (SemanticAnalysisException sae) {
+                throw new ExecutionException(sae.getMessage(), local.getLine(), local.getColumn());
+            }
         }
 
         try {
@@ -94,7 +104,11 @@ public class Executor {
             return rfc.getValue();
         }
 
-        return defaultValue(Type.fromToken(decl.getReturnType()));
+        try {
+            return defaultValue(Type.fromToken(decl.getReturnType()));
+        } catch (SemanticAnalysisException sae) {
+            throw new ExecutionException(sae.getMessage(), decl.getLine(), decl.getColumn());
+        }
     }
 
     private Value defaultValue(Type type) {
