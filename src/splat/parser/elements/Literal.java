@@ -3,9 +3,6 @@ package splat.parser.elements;
 import java.util.Map;
 
 import splat.executor.ExecutionException;
-import splat.executor.BooleanValue;
-import splat.executor.IntegerValue;
-import splat.executor.StringValue;
 import splat.executor.Value;
 import splat.lexer.Token;
 import splat.semanticanalyzer.SemanticAnalysisException;
@@ -64,13 +61,13 @@ public class Literal extends Expression {
     public Value evaluate(Map<String, FunctionDecl> funcMap,
                           Map<String, Value> varAndParamMap) throws ExecutionException {
         if (isIntegerLiteral()) {
-            return new IntegerValue(Integer.parseInt(value));
+            return Value.ofInteger(Integer.parseInt(value));
         }
         if (isBooleanLiteral()) {
-            return new BooleanValue(Boolean.parseBoolean(value));
+            return Value.ofBoolean(Boolean.parseBoolean(value));
         }
         if (isStringLiteral()) {
-            return new StringValue(getStringValue());
+            return Value.ofString(getStringValue());
         }
         throw new ExecutionException("Unknown literal '" + value + "'", getLine(), getColumn());
     }
