@@ -1,10 +1,12 @@
 package splat.parser.elements;
 
-import splat.lexer.Token;
 import java.util.List;
 
 import java.util.Map;
 
+import splat.executor.ExecutionException;
+import splat.executor.ReturnFromCall;
+import splat.executor.Value;
 import splat.lexer.Token;
 import splat.semanticanalyzer.SemanticAnalysisException;
 import splat.semanticanalyzer.Type;
@@ -40,6 +42,23 @@ public class WhileLoop extends Statement {
 
         for (Statement stmt : body) {
             stmt.analyze(funcMap, varAndParamMap);
+        }
+    }
+
+    @Override
+    public void execute(Map<String, FunctionDecl> funcMap,
+                        Map<String, Value> varAndParamMap) throws ReturnFromCall, ExecutionException {
+        while (true) {
+            Value condVal = condition.evaluate(funcMap, varAndParamMap);
+            if (!condVal.isBoolean()) {
+                throw new ExecutionException("While condition must be Boolean", condition.getLine(), condition.getColumn());
+            }
+            if (!condVal.asBoolean()) {
+                break;
+            }
+            for (Statement stmt : body) {
+                stmt.execute(funcMap, varAndParamMap);
+            }
         }
     }
 }

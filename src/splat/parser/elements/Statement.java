@@ -2,6 +2,9 @@ package splat.parser.elements;
 
 import java.util.Map;
 
+import splat.executor.ExecutionException;
+import splat.executor.ReturnFromCall;
+import splat.executor.Value;
 import splat.lexer.Token;
 import splat.semanticanalyzer.SemanticAnalysisException;
 import splat.semanticanalyzer.Type;
@@ -29,7 +32,7 @@ public abstract class Statement extends ASTElement {
      * updating the varAndParamMap.  Both of the given maps may be needed for
      * evaluating any sub-expressions in the statement.
      */
-//	 public abstract void execute(Map<String, FunctionDecl> funcMap,
-//	                              Map<String, Value> varAndParamMap)
-//										throws ReturnFromCall;
+    public abstract void execute(Map<String, FunctionDecl> funcMap,
+                                 Map<String, Value> varAndParamMap)
+            throws ReturnFromCall, ExecutionException;
 }
