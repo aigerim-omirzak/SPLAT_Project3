@@ -1,6 +1,13 @@
 package splat.parser.elements;
 
+import java.util.Map;
+
+import splat.executor.ExecutionException;
+import splat.executor.ReturnFromCall;
+import splat.executor.Value;
 import splat.lexer.Token;
+import splat.semanticanalyzer.SemanticAnalysisException;
+import splat.semanticanalyzer.Type;
 
 public class Literal extends Expression {
     private String value;
@@ -31,5 +38,30 @@ public class Literal extends Expression {
 
     public boolean isBooleanLiteral() {
         return value.equals("true") || value.equals("false");
+    }
+
+    @Override
+    public Type analyzeAndGetType(Map<String, FunctionDecl> funcMap, Map<String, Type> varAndParamMap)
+            throws SemanticAnalysisException {
+        if (isIntegerLiteral()) {
+            return Type.INTEGER;
+        } else if (isBooleanLiteral()) {
+            return Type.BOOLEAN;
+        } else if (isStringLiteral()) {
+            return Type.STRING;
+        }
+        throw new SemanticAnalysisException("Unknown literal", getLine(), getColumn());
+    }
+
+    @Override
+    public Value evaluate(Map<String, FunctionDecl> funcMap, Map<String, Value> varAndParamMap)
+            throws ExecutionException, ReturnFromCall {
+        if (isIntegerLiteral()) {
+            return Value.ofInteger(Integer.parseInt(value));
+        } else if (isBooleanLiteral()) {
+            return Value.ofBoolean(Boolean.parseBoolean(value));
+        } else {
+            return Value.ofString(getStringValue());
+        }
     }
 }
