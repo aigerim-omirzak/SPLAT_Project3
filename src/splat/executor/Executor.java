@@ -101,13 +101,24 @@ public class Executor {
                 stmt.execute(funcMap, newVarMap);
             }
         } catch (ReturnFromCall rfc) {
+            syncGlobals(progVarMap, newVarMap);
             return rfc.getValue();
         }
+
+        syncGlobals(progVarMap, newVarMap);
 
         try {
             return Value.defaultFor(Type.fromToken(decl.getReturnType()));
         } catch (SemanticAnalysisException sae) {
             throw new ExecutionException(sae.getMessage(), decl.getLine(), decl.getColumn());
+        }
+    }
+
+    private void syncGlobals(Map<String, Value> globals, Map<String, Value> calleeMap) {
+        for (String label : globals.keySet()) {
+            if (calleeMap.containsKey(label)) {
+                globals.put(label, calleeMap.get(label));
+            }
         }
     }
 }

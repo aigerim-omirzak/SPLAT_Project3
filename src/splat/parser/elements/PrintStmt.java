@@ -31,8 +31,9 @@ public class PrintStmt extends Statement {
         if (expr != null) {
             Value v = expr.evaluate(funcMap, varAndParamMap);
             System.out.print(v.getRaw());
+        } else {
+            System.out.println();
         }
-        System.out.println();
     }
 
     @Override
