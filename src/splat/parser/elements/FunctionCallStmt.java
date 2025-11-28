@@ -1,6 +1,13 @@
 package splat.parser.elements;
 
+import java.util.Map;
+
+import splat.executor.ExecutionException;
+import splat.executor.ReturnFromCall;
+import splat.executor.Value;
 import splat.lexer.Token;
+import splat.semanticanalyzer.SemanticAnalysisException;
+import splat.semanticanalyzer.Type;
 
 public class FunctionCallStmt extends Statement {
     private final FunctionCall call;
@@ -14,10 +21,16 @@ public class FunctionCallStmt extends Statement {
         return call;
     }
 
+    @Override
+    public void analyze(Map<String, FunctionDecl> funcMap, Map<String, Type> varAndParamMap)
+            throws SemanticAnalysisException {
+        call.analyzeAndGetType(funcMap, varAndParamMap);
+    }
 
-
-    public Token getStartToken() {
-        return call.getStartToken();
+    @Override
+    public void execute(Map<String, FunctionDecl> funcMap, Map<String, Value> varAndParamMap)
+            throws ReturnFromCall, ExecutionException {
+        call.evaluate(funcMap, varAndParamMap);
     }
 
 
