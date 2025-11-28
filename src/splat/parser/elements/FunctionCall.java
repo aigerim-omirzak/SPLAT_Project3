@@ -1,7 +1,15 @@
 package splat.parser.elements;
 
 import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
+
+import splat.executor.ExecutionException;
+import splat.executor.ReturnFromCall;
+import splat.executor.Value;
 import splat.lexer.Token;
+import splat.semanticanalyzer.SemanticAnalysisException;
+import splat.semanticanalyzer.Type;
 
 public class FunctionCall extends Expression {
     private final Token name;
@@ -18,6 +26,89 @@ public class FunctionCall extends Expression {
 
     public Token getStartToken() {
         return name;
+    }
+
+    @Override
+    public Type analyzeAndGetType(Map<String, FunctionDecl> funcMap,
+                                  Map<String, Type> varAndParamMap) throws SemanticAnalysisException {
+        FunctionDecl decl = funcMap.get(name.getLexeme());
+        if (decl == null) {
+            throw new SemanticAnalysisException("Unknown function '" + name.getLexeme() + "'", name.getLine(), name.getCol());
+        }
+
+        List<VariableDecl> params = decl.getParams();
+        if (params.size() != args.size()) {
+            throw new SemanticAnalysisException("Incorrect number of arguments for function", name.getLine(), name.getCol());
+        }
+
+        for (int i = 0; i < params.size(); i++) {
+            Type expected = Type.fromToken(params.get(i).getType());
+            Type actual = args.get(i).analyzeAndGetType(funcMap, varAndParamMap);
+            if (expected != actual) {
+                throw new SemanticAnalysisException("Argument type mismatch", args.get(i));
+            }
+        }
+
+        return Type.fromToken(decl.getReturnType());
+    }
+
+    @Override
+    public Value evaluate(Map<String, FunctionDecl> funcMap,
+                          Map<String, Value> varAndParamMap) throws ExecutionException, ReturnFromCall {
+        FunctionDecl decl = funcMap.get(name.getLexeme());
+        if (decl == null) {
+            throw new ExecutionException("Unknown function '" + name.getLexeme() + "'", getLine(), getColumn());
+        }
+
+        List<VariableDecl> params = decl.getParams();
+        if (params.size() != args.size()) {
+            throw new ExecutionException("Incorrect number of arguments for function", getLine(), getColumn());
+        }
+
+        Map<String, Value> newVarMap = new HashMap<>();
+        newVarMap.putAll(varAndParamMap);
+
+        for (int i = 0; i < params.size(); i++) {
+            VariableDecl param = params.get(i);
+            Value argVal = args.get(i).evaluate(funcMap, varAndParamMap);
+            newVarMap.put(param.getLabelLexeme(), argVal);
+        }
+
+        for (VariableDecl local : decl.getLocalVars()) {
+            try {
+                Type type = Type.fromToken(local.getType());
+                newVarMap.put(local.getLabelLexeme(), defaultValue(type));
+            } catch (SemanticAnalysisException sae) {
+                throw new ExecutionException(sae.getMessage(), local.getLine(), local.getColumn());
+            }
+        }
+
+        try {
+            for (Statement stmt : decl.getStmts()) {
+                stmt.execute(funcMap, newVarMap);
+            }
+        } catch (ReturnFromCall rfc) {
+            return rfc.getValue();
+        }
+
+        try {
+            return defaultValue(Type.fromToken(decl.getReturnType()));
+        } catch (SemanticAnalysisException sae) {
+            throw new ExecutionException(sae.getMessage(), decl.getLine(), decl.getColumn());
+        }
+    }
+
+    private Value defaultValue(Type type) {
+        switch (type) {
+            case INTEGER:
+                return Value.ofInteger(0);
+            case BOOLEAN:
+                return Value.ofBoolean(false);
+            case STRING:
+                return Value.ofString("");
+            default:
+                return Value.voidValue();
+        }
     }
 
 
