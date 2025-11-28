@@ -56,7 +56,7 @@ public class FunctionCall extends Expression {
     public Value evaluate(Map<String, FunctionDecl> funcMap,
                           Map<String, Value> varAndParamMap) throws ExecutionException, ReturnFromCall {
         FunctionDecl decl = funcMap.get(name.getLexeme());
-        if (decl == null) {
+        if (decl == null) {https://github.com/aigerim-omirzak/Splat_Project/pull/10/conflict?name=src%252Fsplat%252Fparser%252Felements%252FFunctionCall.java&ancestor_oid=d5ea2149a66d91b1922599d19ee03ef97cbe37c9&base_oid=a73bb4eb3ab9a094b95b46d08a24a39c7c18dca7&head_oid=23c13bbd2c36c24d4527663bdf5456a3e3dd4ef6
             throw new ExecutionException("Unknown function '" + name.getLexeme() + "'", getLine(), getColumn());
         }
 
@@ -66,7 +66,6 @@ public class FunctionCall extends Expression {
         }
 
         Map<String, Value> newVarMap = new HashMap<>();
-        newVarMap.putAll(varAndParamMap);
 
         for (int i = 0; i < params.size(); i++) {
             VariableDecl param = params.get(i);
@@ -88,11 +87,11 @@ public class FunctionCall extends Expression {
                 stmt.execute(funcMap, newVarMap);
             }
         } catch (ReturnFromCall rfc) {
-            syncGlobals(varAndParamMap, newVarMap);
+            syncGlobals(varAndParamMap, newVarMap, decl);
             return rfc.getValue();
         }
 
-        syncGlobals(varAndParamMap, newVarMap);
+        syncGlobals(varAndParamMap, newVarMap, decl);
 
         try {
             return Value.defaultFor(Type.fromToken(decl.getReturnType()));
@@ -101,8 +100,19 @@ public class FunctionCall extends Expression {
         }
     }
 
-    private void syncGlobals(Map<String, Value> callerMap, Map<String, Value> calleeMap) {
+    private void syncGlobals(Map<String, Value> callerMap, Map<String, Value> calleeMap, FunctionDecl decl) {
+        java.util.Set<String> shadowed = new java.util.HashSet<>();
+        for (VariableDecl param : decl.getParams()) {
+            shadowed.add(param.getLabelLexeme());
+        }
+        for (VariableDecl local : decl.getLocalVars()) {
+            shadowed.add(local.getLabelLexeme());
+        }
+
         for (String label : callerMap.keySet()) {
+            if (shadowed.contains(label)) {
+                continue;
+            }
             if (calleeMap.containsKey(label)) {
                 callerMap.put(label, calleeMap.get(label));
             }

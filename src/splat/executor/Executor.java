@@ -78,8 +78,6 @@ public class Executor {
         }
 
         Map<String, Value> newVarMap = new HashMap<>();
-        // Include program-level variables for read/write access
-        newVarMap.putAll(progVarMap);
 
         for (int i = 0; i < params.size(); i++) {
             VariableDecl param = params.get(i);
