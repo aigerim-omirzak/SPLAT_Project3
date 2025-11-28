@@ -3,7 +3,6 @@ package splat.parser.elements;
 import java.util.Map;
 
 import splat.executor.ExecutionException;
-import splat.executor.ReturnFromCall;
 import splat.executor.Value;
 import splat.lexer.Token;
 import splat.semanticanalyzer.SemanticAnalysisException;
@@ -17,25 +16,33 @@ public class FunctionCallStmt extends Statement {
         this.call = call;
     }
 
-    public FunctionCall getCall() {
-        return call;
-    }
 
-    @Override
-    public void analyze(Map<String, FunctionDecl> funcMap, Map<String, Type> varAndParamMap)
-            throws SemanticAnalysisException {
-        call.analyzeAndGetType(funcMap, varAndParamMap);
-    }
-
-    @Override
-    public void execute(Map<String, FunctionDecl> funcMap, Map<String, Value> varAndParamMap)
-            throws ReturnFromCall, ExecutionException {
-        call.evaluate(funcMap, varAndParamMap);
+    public Token getStartToken() {
+        return call.getStartToken();
     }
 
 
     @Override
     public String toString() {
         return "FunctionCallStmt(" + call + ")";
+    }
+
+    @Override
+    public void analyze(Map<String, FunctionDecl> funcMap,
+                        Map<String, Type> varAndParamMap) throws SemanticAnalysisException {
+        Type returnType = call.analyzeCall(funcMap, varAndParamMap);
+        if (returnType != Type.VOID) {
+            Token start = call.getStartToken();
+            throw new SemanticAnalysisException(
+                    "Function '" + start.getLexeme() + "' returns " + returnType
+                            + " and cannot be used as a statement",
+                    start.getLine(), start.getCol());
+        }
+    }
+
+    @Override
+    public void execute(Map<String, FunctionDecl> funcMap,
+                        Map<String, Value> varAndParamMap) throws ExecutionException {
+        call.evaluate(funcMap, varAndParamMap);
     }
 }

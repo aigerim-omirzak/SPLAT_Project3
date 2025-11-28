@@ -2,68 +2,48 @@ package splat.executor;
 
 import splat.semanticanalyzer.Type;
 
-public class Value {
-    private final Type type;
-    private final Object value;
+/**
+ * Represents a runtime value for the SPLAT executor.
+ */
+public abstract class Value {
 
-    public Value(Type type, Object value) {
-        this.type = type;
-        this.value = value;
+    public abstract Type getType();
+
+    public boolean isInteger() {
+        return getType() == Type.INTEGER;
     }
 
-    public static Value ofInteger(int v) {
-        return new Value(Type.INTEGER, v);
+    public boolean isBoolean() {
+        return getType() == Type.BOOLEAN;
     }
 
-    public static Value ofBoolean(boolean v) {
-        return new Value(Type.BOOLEAN, v);
+    public boolean isString() {
+        return getType() == Type.STRING;
     }
 
-    public static Value ofString(String v) {
-        return new Value(Type.STRING, v);
-    }
-
-    public static Value voidValue() {
-        return new Value(Type.VOID, null);
-    }
-
-    public static Value defaultFor(Type type) {
-        switch (type) {
-            case INTEGER:
-                return ofInteger(0);
-            case BOOLEAN:
-                return ofBoolean(false);
-            case STRING:
-                return ofString("");
-            case VOID:
-                return voidValue();
-            default:
-                throw new IllegalArgumentException("Unknown type for default value: " + type);
-        }
-    }
-
-    public Type getType() {
-        return type;
-    }
-
-    public Object getRaw() {
-        return value;
-    }
-
-    public Object getValue() {
-        return value;
-    }
-
-    public int asInt() {
-        return (Integer) value;
+    public int asInteger() {
+        throw new IllegalStateException("Not an integer value");
     }
 
     public boolean asBoolean() {
-        return (Boolean) value;
+        throw new IllegalStateException("Not a boolean value");
     }
 
     public String asString() {
-        return (String) value;
+        throw new IllegalStateException("Not a string value");
+    }
+
+    public static Value defaultValue(Type type) {
+        switch (type) {
+            case INTEGER:
+                return new IntegerValue(0);
+            case BOOLEAN:
+                return new BooleanValue(false);
+            case STRING:
+                return new StringValue("");
+            case VOID:
+            default:
+                return null;
+        }
     }
 }
-

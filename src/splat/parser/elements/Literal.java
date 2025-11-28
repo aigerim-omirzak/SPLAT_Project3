@@ -3,7 +3,9 @@ package splat.parser.elements;
 import java.util.Map;
 
 import splat.executor.ExecutionException;
-import splat.executor.ReturnFromCall;
+import splat.executor.BooleanValue;
+import splat.executor.IntegerValue;
+import splat.executor.StringValue;
 import splat.executor.Value;
 import splat.lexer.Token;
 import splat.semanticanalyzer.SemanticAnalysisException;
@@ -21,6 +23,7 @@ public class Literal extends Expression {
         return value;
     }
 
+    // If you need to get the actual value without quotes for strings
     public String getStringValue() {
         if (value.startsWith("\"") && value.endsWith("\"")) {
             return value.substring(1, value.length() - 1);
@@ -41,28 +44,21 @@ public class Literal extends Expression {
     }
 
     @Override
-    public Type analyzeAndGetType(Map<String, FunctionDecl> funcMap, Map<String, Type> varAndParamMap)
-            throws SemanticAnalysisException {
+    public Type analyzeAndGetType(Map<String, FunctionDecl> funcMap,
+                                  Map<String, Type> varAndParamMap) throws SemanticAnalysisException {
         if (isIntegerLiteral()) {
             return Type.INTEGER;
-        } else if (isBooleanLiteral()) {
+        }
+        if (isBooleanLiteral()) {
             return Type.BOOLEAN;
-        } else if (isStringLiteral()) {
+        }
+        if (isStringLiteral()) {
             return Type.STRING;
         }
-        throw new SemanticAnalysisException("Unknown literal", getLine(), getColumn());
-    }
 
-    @Override
-    public Value evaluate(Map<String, FunctionDecl> funcMap, Map<String, Value> varAndParamMap)
-            throws ExecutionException, ReturnFromCall {
-        if (isIntegerLiteral()) {
-            return Value.ofInteger(Integer.parseInt(value));
-        } else if (isBooleanLiteral()) {
-            return Value.ofBoolean(Boolean.parseBoolean(value));
-        } else {
-            return Value.ofString(getStringValue());
-        }
+        throw new SemanticAnalysisException(
+                "Unknown literal '" + value + "'",
+                getLine(), getColumn());
     }
 
     @Override

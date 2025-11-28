@@ -223,6 +223,7 @@ public class Lexer {
                     char pc = (char) p;
                     String two = "" + c + pc;
 
+                    // Операторы SPL
                     if (two.equals("==") || two.equals("!=") || two.equals("<=") || two.equals(">=") || two.equals(":=")) {
                         tokens.add(new Token(two, line, col));
                         col++;

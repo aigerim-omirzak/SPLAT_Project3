@@ -1,3 +1,4 @@
+// Token.java
 package splat.lexer;
 import java.util.Objects;
 

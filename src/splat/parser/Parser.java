@@ -37,6 +37,9 @@ public class Parser {
         return new ProgramAST(declarations, statements, programToken);
     }
 
+    /* ----------------------------------------------------
+     * Declaration parsing
+     * ---------------------------------------------------- */
     private List<Declaration> parseDeclarations() throws ParseException {
         List<Declaration> decls = new ArrayList<>();
         while (!isAtEnd() && isIdentifier(peek())) {
@@ -95,6 +98,9 @@ public class Parser {
         return new FunctionDecl(nameToken, params, returnType, locals, body);
     }
 
+    /* ----------------------------------------------------
+     * Statement parsing
+     * ---------------------------------------------------- */
     private List<Statement> parseStatementList(String... terminators) throws ParseException {
         Set<String> stops = new HashSet<>(Arrays.asList(terminators));
         List<Statement> statements = new ArrayList<>();
@@ -234,6 +240,9 @@ public class Parser {
         return new FunctionCall(name, args);
     }
 
+    /* ----------------------------------------------------
+     * Expression parsing
+     * ---------------------------------------------------- */
     private Expression parseExpression() throws ParseException {
         return parseOr();
     }
@@ -333,6 +342,9 @@ public class Parser {
                 lexeme.equals("true") || lexeme.equals("false");
     }
 
+    /* ----------------------------------------------------
+     * Utility helpers
+     * ---------------------------------------------------- */
     private boolean isIdentifier(Token token) {
         if (token == null) {
             return false;
@@ -347,8 +359,7 @@ public class Parser {
     private Token consumeIdentifier(String context) throws ParseException {
         Token token = peek();
         if (!isIdentifier(token)) {
-            throw new ParseException("Expected " + context + ", found '" + (token != null ? token.getLexeme() : "<eof>") + "'",
-                    token != null ? token : lastToken());
+            throw new ParseException("Expected " + context + ", found '" + (token != null ? token.getLexeme() : "<eof>") + "'", token != null ? token : lastToken());
         }
         position++;
         return token;
