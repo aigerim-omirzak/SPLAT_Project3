@@ -27,4 +27,16 @@ public final class ExpressionStmt extends Statement {
             throws ReturnFromCall, ExecutionException {
         expression.evaluate(funcMap, varAndParamMap);
     }
+
+    @Override
+    public void analyze(Map<String, FunctionDecl> funcMap, Map<String, Type> varAndParamMap)
+            throws SemanticAnalysisException {
+        expr.analyzeAndGetType(funcMap, varAndParamMap);
+    }
+
+    @Override
+    public void execute(Map<String, FunctionDecl> funcMap, Map<String, Value> varAndParamMap)
+            throws ReturnFromCall, ExecutionException {
+        expr.evaluate(funcMap, varAndParamMap);
+    }
 }
