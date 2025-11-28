@@ -3,8 +3,7 @@ package splat.parser.elements;
 import java.util.Map;
 
 import splat.executor.ExecutionException;
-import splat.executor.BooleanValue;
-import splat.executor.IntegerValue;
+import splat.executor.ReturnFromCall;
 import splat.executor.Value;
 import splat.lexer.Token;
 import splat.semanticanalyzer.SemanticAnalysisException;
@@ -29,37 +28,39 @@ public class UnaryOp extends Expression {
     }
 
     @Override
-    public String toString() {
-        return "(" + op.getLexeme() + " " + expr + ")";
-    }
-
-    @Override
-    public Type analyzeAndGetType(Map<String, FunctionDecl> funcMap,
-                                  Map<String, Type> varAndParamMap) throws SemanticAnalysisException {
-        Type childType = expr.analyzeAndGetType(funcMap, varAndParamMap);
-        String opLexeme = op.getLexeme();
-
-        if ("-".equals(opLexeme)) {
-            if (childType != Type.INTEGER) {
-                throw new SemanticAnalysisException(
-                        "Unary '-' requires an integer operand",
-                        op.getLine(), op.getCol());
+    public Type analyzeAndGetType(Map<String, FunctionDecl> funcMap, Map<String, Type> varAndParamMap)
+            throws SemanticAnalysisException {
+        Type inner = expr.analyzeAndGetType(funcMap, varAndParamMap);
+        if (op.getLexeme().equals("-")) {
+            if (inner != Type.INTEGER) {
+                throw new SemanticAnalysisException("Unary - requires integer", op.getLine(), op.getCol());
             }
             return Type.INTEGER;
         }
-
-        if ("not".equals(opLexeme)) {
-            if (childType != Type.BOOLEAN) {
-                throw new SemanticAnalysisException(
-                        "'not' requires a boolean operand",
-                        op.getLine(), op.getCol());
+        if (op.getLexeme().equals("not")) {
+            if (inner != Type.BOOLEAN) {
+                throw new SemanticAnalysisException("not requires boolean", op.getLine(), op.getCol());
             }
             return Type.BOOLEAN;
         }
+        throw new SemanticAnalysisException("Unknown unary operator", op.getLine(), op.getCol());
+    }
 
-        throw new SemanticAnalysisException(
-                "Unknown unary operator '" + opLexeme + "'",
-                op.getLine(), op.getCol());
+    @Override
+    public Value evaluate(Map<String, FunctionDecl> funcMap, Map<String, Value> varAndParamMap)
+            throws ExecutionException, ReturnFromCall {
+        Value v = expr.evaluate(funcMap, varAndParamMap);
+        if (op.getLexeme().equals("-")) {
+            return Value.ofInteger(-v.asInt());
+        } else if (op.getLexeme().equals("not")) {
+            return Value.ofBoolean(!v.asBoolean());
+        }
+        throw new ExecutionException("Unknown unary operator", op.getLine(), op.getCol());
+    }
+
+    @Override
+    public String toString() {
+        return "(" + op.getLexeme() + " " + expr + ")";
     }
 
     @Override

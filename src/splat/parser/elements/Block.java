@@ -23,21 +23,16 @@ public class Block extends Statement {
     }
 
     @Override
-    public Token getStartToken() {
-        return super.getStartToken();
-    }
-
-    @Override
-    public void analyze(Map<String, FunctionDecl> funcMap,
-                        Map<String, Type> varAndParamMap) throws SemanticAnalysisException {
+    public void analyze(Map<String, FunctionDecl> funcMap, Map<String, Type> varAndParamMap)
+            throws SemanticAnalysisException {
         for (Statement stmt : statements) {
             stmt.analyze(funcMap, varAndParamMap);
         }
     }
 
     @Override
-    public void execute(Map<String, FunctionDecl> funcMap,
-                        Map<String, Value> varAndParamMap) throws ReturnFromCall, ExecutionException {
+    public void execute(Map<String, FunctionDecl> funcMap, Map<String, Value> varAndParamMap)
+            throws ReturnFromCall, ExecutionException {
         for (Statement stmt : statements) {
             stmt.execute(funcMap, varAndParamMap);
         }

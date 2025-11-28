@@ -3,6 +3,7 @@ package splat.parser.elements;
 import java.util.Map;
 
 import splat.executor.ExecutionException;
+import splat.executor.ReturnFromCall;
 import splat.executor.Value;
 import splat.lexer.Token;
 import splat.semanticanalyzer.SemanticAnalysisException;
@@ -18,41 +19,32 @@ public class Assignment extends Statement {
         this.expr = expr;
     }
 
-    public Token getVariable() { return variable; }
     public Expression getExpression() { return expr; }
+
+    @Override
+    public void analyze(Map<String, FunctionDecl> funcMap, Map<String, Type> varAndParamMap)
+            throws SemanticAnalysisException {
+        String name = variable.getLexeme();
+        if (!varAndParamMap.containsKey(name)) {
+            throw new SemanticAnalysisException("Unknown variable '" + name + "'", variable.getLine(), variable.getCol());
+        }
+        Type expected = varAndParamMap.get(name);
+        Type actual = expr.analyzeAndGetType(funcMap, varAndParamMap);
+        if (expected != actual) {
+            throw new SemanticAnalysisException("Type mismatch in assignment", variable.getLine(), variable.getCol());
+        }
+    }
+
+    @Override
+    public void execute(Map<String, FunctionDecl> funcMap, Map<String, Value> varAndParamMap)
+            throws ReturnFromCall, ExecutionException {
+        Value value = expr.evaluate(funcMap, varAndParamMap);
+        varAndParamMap.put(variable.getLexeme(), value);
+    }
 
     @Override
     public String toString() {
         return variable.getLexeme() + " := " + expr;
     }
-
-    @Override
-    public void analyze(Map<String, FunctionDecl> funcMap,
-                        Map<String, Type> varAndParamMap) throws SemanticAnalysisException {
-        String name = variable.getLexeme();
-        Type targetType = varAndParamMap.get(name);
-        if (targetType == null) {
-            throw new SemanticAnalysisException(
-                    "Variable '" + name + "' is not defined",
-                    variable.getLine(), variable.getCol());
-        }
-
-        Type exprType = expr.analyzeAndGetType(funcMap, varAndParamMap);
-        if (exprType != targetType) {
-            throw new SemanticAnalysisException(
-                    "Type mismatch: cannot assign " + exprType + " to " + targetType,
-                    variable.getLine(), variable.getCol());
-        }
-    }
-
-    @Override
-    public void execute(Map<String, FunctionDecl> funcMap,
-                        Map<String, Value> varAndParamMap) throws ExecutionException {
-        Value value = expr.evaluate(funcMap, varAndParamMap);
-        if (!varAndParamMap.containsKey(variable.getLexeme())) {
-            throw new ExecutionException("Variable '" + variable.getLexeme() + "' is not defined",
-                    variable.getLine(), variable.getCol());
-        }
-        varAndParamMap.put(variable.getLexeme(), value);
-    }
 }
+
