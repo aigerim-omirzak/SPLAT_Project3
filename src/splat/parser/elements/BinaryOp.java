@@ -3,7 +3,8 @@ package splat.parser.elements;
 import java.util.Map;
 
 import splat.executor.ExecutionException;
-import splat.executor.ReturnFromCall;
+import splat.executor.BooleanValue;
+import splat.executor.IntegerValue;
 import splat.executor.Value;
 import splat.lexer.Token;
 import splat.semanticanalyzer.SemanticAnalysisException;
@@ -22,85 +23,128 @@ public class BinaryOp extends Expression {
     }
 
     @Override
-    public Type analyzeAndGetType(Map<String, FunctionDecl> funcMap, Map<String, Type> varAndParamMap)
-            throws SemanticAnalysisException {
-        Type leftType = left.analyzeAndGetType(funcMap, varAndParamMap);
-        Type rightType = right.analyzeAndGetType(funcMap, varAndParamMap);
-        String lexeme = op.getLexeme();
-
-        switch (lexeme) {
-            case "+": case "-": case "*": case "/": case "%":
-                if (leftType != Type.INTEGER || rightType != Type.INTEGER) {
-                    throw new SemanticAnalysisException("Arithmetic operands must be integers", op.getLine(), op.getCol());
-                }
-                return Type.INTEGER;
-            case "<": case "<=": case ">": case ">=":
-                if (leftType != Type.INTEGER || rightType != Type.INTEGER) {
-                    throw new SemanticAnalysisException("Comparison operands must be integers", op.getLine(), op.getCol());
-                }
-                return Type.BOOLEAN;
-            case "==": case "!=":
-                if (leftType != rightType) {
-                    throw new SemanticAnalysisException("Equality operands must match", op.getLine(), op.getCol());
-                }
-                return Type.BOOLEAN;
-            case "and": case "or":
-                if (leftType != Type.BOOLEAN || rightType != Type.BOOLEAN) {
-                    throw new SemanticAnalysisException("Logical operands must be boolean", op.getLine(), op.getCol());
-                }
-                return Type.BOOLEAN;
-            default:
-                throw new SemanticAnalysisException("Unknown operator '" + lexeme + "'", op.getLine(), op.getCol());
-        }
-    }
-
-    @Override
-    public Value evaluate(Map<String, FunctionDecl> funcMap, Map<String, Value> varAndParamMap)
-            throws ExecutionException, ReturnFromCall {
-        Value l = left.evaluate(funcMap, varAndParamMap);
-        Value r = right.evaluate(funcMap, varAndParamMap);
-        String lexeme = op.getLexeme();
-
-        switch (lexeme) {
-            case "+":
-                return Value.ofInteger(l.asInt() + r.asInt());
-            case "-":
-                return Value.ofInteger(l.asInt() - r.asInt());
-            case "*":
-                return Value.ofInteger(l.asInt() * r.asInt());
-            case "/":
-                if (r.asInt() == 0) {
-                    throw new ExecutionException("Divide by zero", op.getLine(), op.getCol());
-                }
-                return Value.ofInteger(l.asInt() / r.asInt());
-            case "%":
-                if (r.asInt() == 0) {
-                    throw new ExecutionException("Divide by zero", op.getLine(), op.getCol());
-                }
-                return Value.ofInteger(l.asInt() % r.asInt());
-            case "<":
-                return Value.ofBoolean(l.asInt() < r.asInt());
-            case "<=":
-                return Value.ofBoolean(l.asInt() <= r.asInt());
-            case ">":
-                return Value.ofBoolean(l.asInt() > r.asInt());
-            case ">=":
-                return Value.ofBoolean(l.asInt() >= r.asInt());
-            case "==":
-                return Value.ofBoolean(l.getRaw().equals(r.getRaw()));
-            case "!=":
-                return Value.ofBoolean(!l.getRaw().equals(r.getRaw()));
-            case "and":
-                return Value.ofBoolean(l.asBoolean() && r.asBoolean());
-            case "or":
-                return Value.ofBoolean(l.asBoolean() || r.asBoolean());
-            default:
-                throw new ExecutionException("Unknown operator", op.getLine(), op.getCol());
-        }
-    }
-
-    @Override
     public String toString() {
         return "(" + left + " " + op.getLexeme() + " " + right + ")";
+    }
+
+    @Override
+    public Type analyzeAndGetType(Map<String, FunctionDecl> funcMap,
+                                  Map<String, Type> varAndParamMap) throws SemanticAnalysisException {
+        Type leftType = left.analyzeAndGetType(funcMap, varAndParamMap);
+        Type rightType = right.analyzeAndGetType(funcMap, varAndParamMap);
+        String opLexeme = op.getLexeme();
+
+        switch (opLexeme) {
+            case "+":
+            case "-":
+            case "*":
+            case "/":
+            case "%":
+                ensureIntegerOperands(leftType, rightType);
+                return Type.INTEGER;
+            case "and":
+            case "or":
+                ensureBooleanOperands(leftType, rightType);
+                return Type.BOOLEAN;
+            case "<":
+            case "<=":
+            case ">":
+            case ">=":
+                ensureIntegerOperands(leftType, rightType);
+                return Type.BOOLEAN;
+            case "==":
+            case "!=":
+                ensureComparableOperands(leftType, rightType);
+                return Type.BOOLEAN;
+            default:
+                throw new SemanticAnalysisException(
+                        "Unknown binary operator '" + opLexeme + "'",
+                        op.getLine(), op.getCol());
+        }
+    }
+
+    private void ensureIntegerOperands(Type leftType, Type rightType) throws SemanticAnalysisException {
+        if (leftType != Type.INTEGER || rightType != Type.INTEGER) {
+            throw new SemanticAnalysisException(
+                    "Operator '" + op.getLexeme() + "' requires integer operands",
+                    op.getLine(), op.getCol());
+        }
+    }
+
+    private void ensureBooleanOperands(Type leftType, Type rightType) throws SemanticAnalysisException {
+        if (leftType != Type.BOOLEAN || rightType != Type.BOOLEAN) {
+            throw new SemanticAnalysisException(
+                    "Operator '" + op.getLexeme() + "' requires boolean operands",
+                    op.getLine(), op.getCol());
+        }
+    }
+
+    private void ensureComparableOperands(Type leftType, Type rightType) throws SemanticAnalysisException {
+        if (leftType == Type.VOID || rightType == Type.VOID || leftType != rightType) {
+            throw new SemanticAnalysisException(
+                    "Equality operator requires operands of the same non-void type",
+                    op.getLine(), op.getCol());
+        }
+    }
+
+    @Override
+    public Value evaluate(Map<String, FunctionDecl> funcMap,
+                          Map<String, Value> varAndParamMap) throws ExecutionException {
+        Value leftVal = left.evaluate(funcMap, varAndParamMap);
+        Value rightVal = right.evaluate(funcMap, varAndParamMap);
+        String opLexeme = op.getLexeme();
+
+        switch (opLexeme) {
+            case "+":
+                return new IntegerValue(leftVal.asInteger() + rightVal.asInteger());
+            case "-":
+                return new IntegerValue(leftVal.asInteger() - rightVal.asInteger());
+            case "*":
+                return new IntegerValue(leftVal.asInteger() * rightVal.asInteger());
+            case "/":
+                if (rightVal.asInteger() == 0) {
+                    throw new ExecutionException("Division by zero", op.getLine(), op.getCol());
+                }
+                return new IntegerValue(leftVal.asInteger() / rightVal.asInteger());
+            case "%":
+                if (rightVal.asInteger() == 0) {
+                    throw new ExecutionException("Division by zero", op.getLine(), op.getCol());
+                }
+                return new IntegerValue(leftVal.asInteger() % rightVal.asInteger());
+            case "and":
+                return new BooleanValue(leftVal.asBoolean() && rightVal.asBoolean());
+            case "or":
+                return new BooleanValue(leftVal.asBoolean() || rightVal.asBoolean());
+            case "<":
+                return new BooleanValue(leftVal.asInteger() < rightVal.asInteger());
+            case "<=":
+                return new BooleanValue(leftVal.asInteger() <= rightVal.asInteger());
+            case ">":
+                return new BooleanValue(leftVal.asInteger() > rightVal.asInteger());
+            case ">=":
+                return new BooleanValue(leftVal.asInteger() >= rightVal.asInteger());
+            case "==":
+                return new BooleanValue(equalsValues(leftVal, rightVal));
+            case "!=":
+                return new BooleanValue(!equalsValues(leftVal, rightVal));
+            default:
+                throw new ExecutionException("Unknown operator '" + opLexeme + "'", op.getLine(), op.getCol());
+        }
+    }
+
+    private boolean equalsValues(Value leftVal, Value rightVal) {
+        if (leftVal.getType() != rightVal.getType()) {
+            return false;
+        }
+        switch (leftVal.getType()) {
+            case INTEGER:
+                return leftVal.asInteger() == rightVal.asInteger();
+            case BOOLEAN:
+                return leftVal.asBoolean() == rightVal.asBoolean();
+            case STRING:
+                return leftVal.asString().equals(rightVal.asString());
+            default:
+                return false;
+        }
     }
 }

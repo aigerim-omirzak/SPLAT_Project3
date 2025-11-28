@@ -26,22 +26,18 @@ public class FunctionDecl extends Declaration {
         return params;
     }
 
-    public List<VariableDecl> getLocalVars() {
-        return localVars;
-    }
-
-    public List<Statement> getStmts() {
-        return body;
-    }
-
-    public List<Statement> getBody() {
-        return body;
-    }
-
     public Token getReturnType() {
         return returnType;
     }
 
+    public List<VariableDecl> getLocalVars() {
+        return localVars;
+    }
+
+
+    public List<Statement> getBody() {
+        return body;
+    }
 
     @Override
     public String toString() {

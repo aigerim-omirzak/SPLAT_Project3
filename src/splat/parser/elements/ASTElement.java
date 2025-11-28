@@ -18,13 +18,6 @@ public abstract class ASTElement {
         return token;
     }
 
-    /**
-     * Convenience accessor for the starting token of this AST element.
-     */
-    public Token getStartToken() {
-        return token;
-    }
-
     public int getLine() {
         return line;
     }
