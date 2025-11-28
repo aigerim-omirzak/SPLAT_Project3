@@ -3,8 +3,6 @@ package splat.parser.elements;
 import java.util.Map;
 
 import splat.executor.ExecutionException;
-import splat.executor.BooleanValue;
-import splat.executor.IntegerValue;
 import splat.executor.Value;
 import splat.lexer.Token;
 import splat.semanticanalyzer.SemanticAnalysisException;
@@ -96,37 +94,37 @@ public class BinaryOp extends Expression {
 
         switch (opLexeme) {
             case "+":
-                return new IntegerValue(leftVal.asInteger() + rightVal.asInteger());
+                return Value.ofInteger(leftVal.asInteger() + rightVal.asInteger());
             case "-":
-                return new IntegerValue(leftVal.asInteger() - rightVal.asInteger());
+                return Value.ofInteger(leftVal.asInteger() - rightVal.asInteger());
             case "*":
-                return new IntegerValue(leftVal.asInteger() * rightVal.asInteger());
+                return Value.ofInteger(leftVal.asInteger() * rightVal.asInteger());
             case "/":
                 if (rightVal.asInteger() == 0) {
                     throw new ExecutionException("Division by zero", op.getLine(), op.getCol());
                 }
-                return new IntegerValue(leftVal.asInteger() / rightVal.asInteger());
+                return Value.ofInteger(leftVal.asInteger() / rightVal.asInteger());
             case "%":
                 if (rightVal.asInteger() == 0) {
                     throw new ExecutionException("Division by zero", op.getLine(), op.getCol());
                 }
-                return new IntegerValue(leftVal.asInteger() % rightVal.asInteger());
+                return Value.ofInteger(leftVal.asInteger() % rightVal.asInteger());
             case "and":
-                return new BooleanValue(leftVal.asBoolean() && rightVal.asBoolean());
+                return Value.ofBoolean(leftVal.asBoolean() && rightVal.asBoolean());
             case "or":
-                return new BooleanValue(leftVal.asBoolean() || rightVal.asBoolean());
+                return Value.ofBoolean(leftVal.asBoolean() || rightVal.asBoolean());
             case "<":
-                return new BooleanValue(leftVal.asInteger() < rightVal.asInteger());
+                return Value.ofBoolean(leftVal.asInteger() < rightVal.asInteger());
             case "<=":
-                return new BooleanValue(leftVal.asInteger() <= rightVal.asInteger());
+                return Value.ofBoolean(leftVal.asInteger() <= rightVal.asInteger());
             case ">":
-                return new BooleanValue(leftVal.asInteger() > rightVal.asInteger());
+                return Value.ofBoolean(leftVal.asInteger() > rightVal.asInteger());
             case ">=":
-                return new BooleanValue(leftVal.asInteger() >= rightVal.asInteger());
+                return Value.ofBoolean(leftVal.asInteger() >= rightVal.asInteger());
             case "==":
-                return new BooleanValue(equalsValues(leftVal, rightVal));
+                return Value.ofBoolean(equalsValues(leftVal, rightVal));
             case "!=":
-                return new BooleanValue(!equalsValues(leftVal, rightVal));
+                return Value.ofBoolean(!equalsValues(leftVal, rightVal));
             default:
                 throw new ExecutionException("Unknown operator '" + opLexeme + "'", op.getLine(), op.getCol());
         }

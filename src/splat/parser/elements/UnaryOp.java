@@ -3,8 +3,6 @@ package splat.parser.elements;
 import java.util.Map;
 
 import splat.executor.ExecutionException;
-import splat.executor.BooleanValue;
-import splat.executor.IntegerValue;
 import splat.executor.Value;
 import splat.lexer.Token;
 import splat.semanticanalyzer.SemanticAnalysisException;
@@ -68,10 +66,10 @@ public class UnaryOp extends Expression {
         Value child = expr.evaluate(funcMap, varAndParamMap);
         String opLexeme = op.getLexeme();
         if ("-".equals(opLexeme)) {
-            return new IntegerValue(-child.asInteger());
+            return Value.ofInteger(-child.asInteger());
         }
         if ("not".equals(opLexeme)) {
-            return new BooleanValue(!child.asBoolean());
+            return Value.ofBoolean(!child.asBoolean());
         }
         throw new ExecutionException("Unknown unary operator '" + opLexeme + "'", op.getLine(), op.getCol());
     }
